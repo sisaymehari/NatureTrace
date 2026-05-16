@@ -1,0 +1,151 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase';
+import type { User } from '@supabase/supabase-js';
+import { Shield, Menu, X } from 'lucide-react';
+
+export default function Navbar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+  const [user, setUser] = useState<User | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
+
+  const links = [
+    { href: '/', label: 'Map' },
+    { href: '/learn', label: 'Learn' },
+    { href: '/dashboard', label: 'Community' },
+    { href: '/report', label: 'Report' },
+  ];
+
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
+
+  return (
+    <nav className="bg-emerald-700 text-white shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <Shield className="w-6 h-6" />
+            BioGuard
+          </Link>
+
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-1">
+            {links.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive(href)
+                    ? 'bg-emerald-900 text-white'
+                    : 'text-emerald-100 hover:bg-emerald-600'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Auth */}
+          <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="text-sm text-emerald-100 hover:text-white px-3 py-2 rounded-md hover:bg-emerald-600 transition-colors"
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="text-sm bg-emerald-900 hover:bg-emerald-950 px-4 py-2 rounded-md transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm text-emerald-100 hover:text-white px-3 py-2 rounded-md hover:bg-emerald-600 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="text-sm bg-white text-emerald-700 font-semibold px-4 py-2 rounded-md hover:bg-emerald-50 transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 rounded-md hover:bg-emerald-600 transition-colors"
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden border-t border-emerald-600 px-4 py-3 space-y-1">
+          {links.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMenuOpen(false)}
+              className={`block px-3 py-2 rounded-md text-sm font-medium ${
+                isActive(href) ? 'bg-emerald-900' : 'hover:bg-emerald-600'
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+          <hr className="border-emerald-600 my-2" />
+          {user ? (
+            <>
+              <Link href="/profile" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
+                Profile
+              </Link>
+              <button onClick={signOut} className="block w-full text-left px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
+                Login
+              </Link>
+              <Link href="/signup" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+    </nav>
+  );
+}
