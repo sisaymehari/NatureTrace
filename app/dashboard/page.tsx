@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import ReportCard from '@/components/ReportCard';
 import type { Report, User } from '@/types';
+import { BADGES } from '@/types';
 import { BarChart3, Users, TreePine, Trophy } from 'lucide-react';
+
+const RANK_STYLE = [
+  { color: 'text-yellow-500', bg: 'bg-yellow-50 border-yellow-200', label: '1st' },
+  { color: 'text-gray-400',   bg: 'bg-gray-50 border-gray-200',     label: '2nd' },
+  { color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200',   label: '3rd' },
+] as const;
 
 export default function DashboardPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -26,7 +33,7 @@ export default function DashboardPage() {
 
       const { data: lb } = await supabase
         .from('users')
-        .select('id, username, eco_points, badge_ids')
+        .select('id, username, eco_points, badge_ids, reports_count')
         .order('eco_points', { ascending: false })
         .limit(10);
       setLeaderboard((lb as User[]) ?? []);
@@ -105,25 +112,56 @@ export default function DashboardPage() {
             {loading ? (
               <div className="p-4 space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
+                  <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />
                 ))}
               </div>
             ) : leaderboard.length === 0 ? (
               <p className="p-6 text-center text-gray-400 text-sm">No members yet</p>
             ) : (
               <ul className="divide-y divide-gray-50">
-                {leaderboard.map((user, idx) => (
-                  <li key={user.id} className="flex items-center gap-3 px-4 py-3">
-                    <span className={`text-sm font-bold w-6 text-center ${idx < 3 ? 'text-yellow-500' : 'text-gray-400'}`}>
-                      {idx + 1}
-                    </span>
-                    <div className="w-7 h-7 bg-emerald-100 rounded-full flex items-center justify-center text-xs font-bold text-emerald-700">
-                      {user.username?.[0]?.toUpperCase() ?? '?'}
-                    </div>
-                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">{user.username ?? 'Unknown'}</span>
-                    <span className="text-xs font-semibold text-emerald-600">{user.eco_points ?? 0} pts</span>
-                  </li>
-                ))}
+                {leaderboard.map((user, idx) => {
+                  const rank = RANK_STYLE[idx];
+                  const topBadgeId = user.badge_ids?.[user.badge_ids.length - 1];
+                  const topBadge = topBadgeId ? BADGES[topBadgeId] : null;
+                  return (
+                    <li key={user.id} className="flex items-center gap-3 px-4 py-3">
+                      {/* Rank badge */}
+                      {rank ? (
+                        <span className={`text-xs font-bold w-8 h-8 flex items-center justify-center rounded-full border ${rank.bg} ${rank.color} flex-shrink-0`}>
+                          {idx + 1}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold w-8 text-center text-gray-400 flex-shrink-0">
+                          {idx + 1}
+                        </span>
+                      )}
+
+                      {/* Avatar */}
+                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-xs font-bold text-emerald-700 flex-shrink-0">
+                        {user.username?.[0]?.toUpperCase() ?? '?'}
+                      </div>
+
+                      {/* Name + badge */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-semibold text-gray-800 truncate">
+                            {user.username ?? 'Unknown'}
+                          </span>
+                          {topBadge && (
+                            <span title={topBadge.label} className="text-base leading-none flex-shrink-0">
+                              {topBadge.icon}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
+                          <span className="font-semibold text-emerald-600">{user.eco_points ?? 0} pts</span>
+                          <span>·</span>
+                          <span>{user.reports_count ?? 0} report{(user.reports_count ?? 0) !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
