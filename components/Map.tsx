@@ -4,7 +4,27 @@ import { useEffect, useRef, useState } from 'react';
 import type { Report, Category } from '@/types';
 import { CATEGORY_COLORS } from '@/types';
 import { createClient } from '@/lib/supabase';
-import { Search, X } from 'lucide-react';
+import { Search, X, LocateFixed } from 'lucide-react';
+
+// Inline CSS colours for popup badges (Tailwind classes are dead inside Leaflet HTML strings)
+const POPUP_BADGE: Record<string, { bg: string; color: string; border: string }> = {
+  wildlife: { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
+  plant:    { bg: '#D1FAE5', color: '#065F46', border: '#A7F3D0' },
+  marine:   { bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE' },
+  invasive: { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' },
+};
+
+function timeAgo(dateStr: string): string {
+  const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 interface NominatimResult {
   place_id: number;
@@ -23,6 +43,7 @@ export default function Map({ initialReports, activeCategory }: Props) {
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any>(null);
   const [reports, setReports] = useState<Report[]>(initialReports);
+  const [locating, setLocating] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,8 +68,15 @@ export default function Map({ initialReports, activeCategory }: Props) {
       const map = L.map(mapRef.current, {
         center: [54.5, -3.5],
         zoom: 6,
-        zoomControl: true,
+        zoomControl: false,       // we'll add it at bottom-right
+        dragging: true,
+        scrollWheelZoom: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
       });
+
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
@@ -107,23 +135,26 @@ export default function Map({ initialReports, activeCategory }: Props) {
   };
 
   const createPopupHTML = (report: Report) => {
-    const colors = CATEGORY_COLORS[report.category];
-    const badgeClass = colors
-      ? `${colors.bg} ${colors.text} ${colors.border}`
-      : 'bg-gray-100 text-gray-800 border-gray-300';
-    const date = new Date(report.created_at).toLocaleDateString('en-GB');
+    const badge = POPUP_BADGE[report.category] ?? { bg: '#F3F4F6', color: '#374151', border: '#D1D5DB' };
+    const ago = timeAgo(report.created_at);
 
     return `
-      <div style="font-family:Arial,sans-serif;min-width:220px;border-radius:12px;overflow:hidden">
-        ${report.photo_url ? `<img src="${report.photo_url}" alt="${report.species_name}" style="width:100%;height:140px;object-fit:cover" />` : ''}
+      <div style="font-family:system-ui,Arial,sans-serif;width:260px;overflow:hidden;margin:-1px">
+        ${report.photo_url
+          ? `<img src="${report.photo_url}" alt="${report.species_name}" style="width:100%;height:130px;object-fit:cover;display:block" />`
+          : ''}
         <div style="padding:12px">
-          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid;display:inline-block;margin-bottom:6px" class="${badgeClass}">
-            ${report.category.toUpperCase()}
-          </span>
-          <h3 style="margin:0 0 4px;font-size:14px;font-weight:700;color:#111">${report.species_name}</h3>
-          <p style="margin:0 0 6px;font-size:12px;color:#555;line-height:1.4">${report.description?.slice(0, 100) ?? ''}${(report.description?.length ?? 0) > 100 ? '…' : ''}</p>
-          <div style="font-size:11px;color:#888">${report.location_name ?? ''} · ${date}</div>
-          <a href="/report/${report.id}" style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:#1D6A48;text-decoration:none;">View details →</a>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;background:${badge.bg};color:${badge.color};border:1px solid ${badge.border}">
+              ${report.category.toUpperCase()}
+            </span>
+            <span style="font-size:11px;color:#9CA3AF">${ago}</span>
+          </div>
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#111827;line-height:1.3">${report.species_name}</p>
+          ${report.location_name
+            ? `<p style="margin:0 0 8px;font-size:11px;color:#6B7280;display:flex;align-items:center;gap:3px">📍 ${report.location_name}</p>`
+            : '<div style="margin-bottom:8px"></div>'}
+          <a href="/report/${report.id}" style="font-size:12px;font-weight:600;color:#1D6A48;text-decoration:none">View details →</a>
         </div>
       </div>
     `;
@@ -215,6 +246,19 @@ export default function Map({ initialReports, activeCategory }: Props) {
     setShowResults(false);
   };
 
+  const handleLocate = () => {
+    if (!navigator.geolocation || !mapInstanceRef.current) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        mapInstanceRef.current.flyTo([coords.latitude, coords.longitude], 14, { animate: true, duration: 1 });
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 8000 }
+    );
+  };
+
   // Close dropdown when clicking outside the search box
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
@@ -281,6 +325,18 @@ export default function Map({ initialReports, activeCategory }: Props) {
           </ul>
         )}
       </div>
+
+      {/* Locate me button — bottom-left, above Leaflet attribution */}
+      <button
+        onClick={handleLocate}
+        disabled={locating}
+        title="Go to my location"
+        className="absolute bottom-8 left-3 z-[1000] w-9 h-9 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:text-emerald-600 hover:border-emerald-400 transition-colors disabled:opacity-50"
+      >
+        {locating
+          ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
+          : <LocateFixed className="w-4 h-4" />}
+      </button>
     </div>
   );
 }
