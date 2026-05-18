@@ -8,8 +8,15 @@ import type { Category, AIIdentifyResult } from '@/types';
 import { CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
 import toast from 'react-hot-toast';
 import {
-  Upload, MapPin, Loader2, AlertTriangle, CheckCircle, Camera, X
+  Upload, MapPin, Loader2, AlertTriangle, CheckCircle, Camera, X, Search
 } from 'lucide-react';
+
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+}
 
 const SPECIES_CATS: { value: Category; label: string; icon: string; description: string }[] = [
   { value: 'wildlife', label: 'Wildlife',  icon: '🦊', description: 'Mammals, birds, reptiles' },
@@ -47,6 +54,13 @@ export default function ReportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
 
+  // Location autocomplete
+  const [locResults, setLocResults] = useState<NominatimResult[]>([]);
+  const [locSearching, setLocSearching] = useState(false);
+  const [showLocResults, setShowLocResults] = useState(false);
+  const locDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locContainerRef = useRef<HTMLDivElement>(null);
+
   const isThreat = THREAT_CATEGORIES.includes(category);
 
   // Clear AI result when switching to a threat category
@@ -62,6 +76,51 @@ export default function ReportPage() {
     window.addEventListener('online', flush);
     return () => window.removeEventListener('online', flush);
   }, []);
+
+  // Close location dropdown when clicking outside
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (locContainerRef.current && !locContainerRef.current.contains(e.target as Node)) {
+        setShowLocResults(false);
+      }
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, []);
+
+  const handleLocationChange = (value: string) => {
+    setLocationName(value);
+    // Clear coordinates when user types manually
+    setLatitude(null);
+    setLongitude(null);
+    if (locDebounceRef.current) clearTimeout(locDebounceRef.current);
+    if (!value.trim()) { setLocResults([]); setShowLocResults(false); return; }
+    locDebounceRef.current = setTimeout(async () => {
+      setLocSearching(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5&addressdetails=0`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data: NominatimResult[] = await res.json();
+        setLocResults(data);
+        setShowLocResults(true);
+      } catch {
+        setLocResults([]);
+      } finally {
+        setLocSearching(false);
+      }
+    }, 500);
+  };
+
+  const handleLocationSelect = (result: NominatimResult) => {
+    const parts = result.display_name.split(',');
+    setLocationName(parts.slice(0, 3).join(',').trim());
+    setLatitude(parseFloat(result.lat));
+    setLongitude(parseFloat(result.lon));
+    setLocResults([]);
+    setShowLocResults(false);
+  };
 
   const handlePhoto = async (file: File) => {
     setPhotoFile(file);
@@ -358,15 +417,60 @@ export default function ReportPage() {
             {gpsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
             {gpsLoading ? 'Detecting…' : 'Auto-detect GPS'}
           </button>
-          {latitude && (
-            <p className="text-xs text-gray-500 mb-2">{latitude.toFixed(5)}, {longitude?.toFixed(5)}</p>
+          {latitude && longitude && (
+            <p className="text-xs text-emerald-600 font-medium mb-2 flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {latitude.toFixed(5)}, {longitude.toFixed(5)}
+            </p>
           )}
-          <input
-            type="text" value={locationName}
-            onChange={(e) => setLocationName(e.target.value)}
-            placeholder="Or enter location name (e.g. Dartmoor, Devon)"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
+
+          {/* Location autocomplete */}
+          <div ref={locContainerRef} className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={locationName}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              onFocus={() => locResults.length > 0 && setShowLocResults(true)}
+              placeholder="Search for a place name…"
+              className="w-full pl-9 pr-8 border border-gray-200 rounded-lg py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            {locationName && (
+              <button
+                type="button"
+                onClick={() => { setLocationName(''); setLocResults([]); setShowLocResults(false); setLatitude(null); setLongitude(null); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label="Clear location"
+              >
+                {locSearching
+                  ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
+                  : <X className="w-4 h-4" />}
+              </button>
+            )}
+
+            {showLocResults && (
+              <ul className="absolute z-50 mt-1 w-full bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                {locResults.length > 0
+                  ? locResults.map((r) => (
+                      <li
+                        key={r.place_id}
+                        onMouseDown={() => handleLocationSelect(r)}
+                        className="px-4 py-2.5 cursor-pointer hover:bg-emerald-50 border-b border-gray-50 last:border-0"
+                      >
+                        <div className="text-sm font-medium text-gray-800 truncate">
+                          {r.display_name.split(',')[0]}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate mt-0.5">
+                          {r.display_name.split(',').slice(1, 3).join(',')}
+                        </div>
+                      </li>
+                    ))
+                  : !locSearching && (
+                      <li className="px-4 py-3 text-sm text-gray-400">No results found</li>
+                    )}
+              </ul>
+            )}
+          </div>
         </div>
 
         <button
