@@ -109,13 +109,14 @@ export async function POST(req: NextRequest) {
       }).eq('id', user.id);
     }
 
-    if (is_invasive || severity === 'high') {
+    const isThreatCategory = ['habitat_destruction', 'illegal_dumping', 'pollution', 'environmental_emergency'].includes(category);
+    if (is_invasive || severity === 'high' || isThreatCategory) {
       await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/alerts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           report_id: report.id,
-          alert_type: is_invasive ? 'invasive_species' : 'high_severity',
+          alert_type: isThreatCategory ? category : is_invasive ? 'invasive_species' : 'high_severity',
         }),
       }).catch(() => {});
     }

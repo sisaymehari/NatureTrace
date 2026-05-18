@@ -8,10 +8,14 @@ import { Search, X, LocateFixed } from 'lucide-react';
 
 // Inline CSS colours for popup badges (Tailwind classes are dead inside Leaflet HTML strings)
 const POPUP_BADGE: Record<string, { bg: string; color: string; border: string }> = {
-  wildlife: { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
-  plant:    { bg: '#D1FAE5', color: '#065F46', border: '#A7F3D0' },
-  marine:   { bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE' },
-  invasive: { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' },
+  wildlife:                { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
+  plant:                   { bg: '#D1FAE5', color: '#065F46', border: '#A7F3D0' },
+  marine:                  { bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE' },
+  invasive:                { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' },
+  habitat_destruction:     { bg: '#FFEDD5', color: '#9A3412', border: '#FED7AA' },
+  illegal_dumping:         { bg: '#FEF9C3', color: '#854D0E', border: '#FEF08A' },
+  pollution:               { bg: '#F3E8FF', color: '#6B21A8', border: '#E9D5FF' },
+  environmental_emergency: { bg: '#FFE4E6', color: '#881337', border: '#FECDD3' },
 };
 
 function timeAgo(dateStr: string): string {

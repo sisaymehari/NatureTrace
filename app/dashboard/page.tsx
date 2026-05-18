@@ -3,14 +3,21 @@
 import { useState, useEffect } from 'react';
 import ReportCard from '@/components/ReportCard';
 import type { Report, User } from '@/types';
-import { BADGES } from '@/types';
-import { BarChart3, Users, TreePine, Trophy } from 'lucide-react';
+import { BADGES, CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
+import { BarChart3, Users, TreePine, Trophy, AlertTriangle } from 'lucide-react';
 
 const RANK_STYLE = [
   { color: 'text-yellow-500', bg: 'bg-yellow-50 border-yellow-200', label: '1st' },
   { color: 'text-gray-400',   bg: 'bg-gray-50 border-gray-200',     label: '2nd' },
   { color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200',   label: '3rd' },
 ] as const;
+
+const THREAT_ICON: Record<string, string> = {
+  habitat_destruction:     '🏚️',
+  illegal_dumping:         '🚯',
+  pollution:               '💧',
+  environmental_emergency: '🔥',
+};
 
 export default function DashboardPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -20,14 +27,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [reportsRes] = await Promise.all([
-        fetch('/api/reports?limit=20'),
-      ]);
-
+      const reportsRes = await fetch('/api/reports?limit=40');
       const reportsData: Report[] = await reportsRes.json().catch(() => []);
       setReports(Array.isArray(reportsData) ? reportsData : []);
 
-      // Fetch leaderboard from supabase directly
       const { createClient } = await import('@/lib/supabase');
       const supabase = createClient();
 
@@ -45,16 +48,18 @@ export default function DashboardPage() {
 
       setLoading(false);
     };
-
     fetchData();
   }, []);
 
-  const speciesCount = new Set(reports.map((r) => r.species_name)).size;
+  const speciesReports = reports.filter((r) => !THREAT_CATEGORIES.includes(r.category));
+  const threatReports  = reports.filter((r) => THREAT_CATEGORIES.includes(r.category));
+  const speciesCount   = new Set(speciesReports.map((r) => r.species_name)).size;
 
   const STATS = [
-    { label: 'Total Reports', value: reports.length, icon: BarChart3, color: 'text-emerald-600' },
-    { label: 'Species Identified', value: speciesCount, icon: TreePine, color: 'text-green-600' },
-    { label: 'Community Members', value: memberCount, icon: Users, color: 'text-blue-600' },
+    { label: 'Total Reports',   value: reports.length,        icon: BarChart3,     color: 'text-emerald-600' },
+    { label: 'Species Sighted', value: speciesCount,          icon: TreePine,      color: 'text-green-600' },
+    { label: 'Threats Filed',   value: threatReports.length,  icon: AlertTriangle, color: 'text-orange-600' },
+    { label: 'Members',         value: memberCount,           icon: Users,         color: 'text-blue-600' },
   ];
 
   return (
@@ -62,7 +67,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Community Dashboard</h1>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {STATS.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between">
@@ -80,23 +85,23 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent reports */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Recent species sightings */}
         <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Recent Reports</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Recent Sightings</h2>
           {loading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white rounded-xl border border-gray-100 h-24 animate-pulse" />
               ))}
             </div>
-          ) : reports.length === 0 ? (
+          ) : speciesReports.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
-              No reports yet. <a href="/report" className="text-emerald-600 hover:underline">Be the first!</a>
+              No sightings yet. <a href="/report" className="text-emerald-600 hover:underline">Be the first!</a>
             </div>
           ) : (
             <div className="space-y-3">
-              {reports.map((r) => (
+              {speciesReports.slice(0, 10).map((r) => (
                 <ReportCard key={r.id} report={r} />
               ))}
             </div>
@@ -125,7 +130,6 @@ export default function DashboardPage() {
                   const topBadge = topBadgeId ? BADGES[topBadgeId] : null;
                   return (
                     <li key={user.id} className="flex items-center gap-3 px-4 py-3">
-                      {/* Rank badge */}
                       {rank ? (
                         <span className={`text-xs font-bold w-8 h-8 flex items-center justify-center rounded-full border ${rank.bg} ${rank.color} flex-shrink-0`}>
                           {idx + 1}
@@ -135,13 +139,9 @@ export default function DashboardPage() {
                           {idx + 1}
                         </span>
                       )}
-
-                      {/* Avatar */}
                       <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-xs font-bold text-emerald-700 flex-shrink-0">
                         {user.username?.[0]?.toUpperCase() ?? '?'}
                       </div>
-
-                      {/* Name + badge */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm font-semibold text-gray-800 truncate">
@@ -166,6 +166,52 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Threat reports section */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-orange-500" /> Environmental Threats
+        </h2>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 h-24 animate-pulse" />
+            ))}
+          </div>
+        ) : threatReports.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-6 text-center text-gray-400">
+            No threats reported yet — <a href="/report" className="text-orange-600 hover:underline">report one now</a>.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {threatReports.slice(0, 6).map((r) => {
+              const colors = CATEGORY_COLORS[r.category];
+              const icon = THREAT_ICON[r.category] ?? '⚠️';
+              return (
+                <a key={r.id} href={`/report/${r.id}`} className="block">
+                  <div className={`rounded-xl border ${colors.border} ${colors.bg} p-4 hover:shadow-md transition-shadow`}>
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="text-2xl flex-shrink-0">{icon}</span>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-bold truncate ${colors.text}`}>{r.species_name}</p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {r.category.replace(/_/g, ' ')}
+                        </p>
+                      </div>
+                    </div>
+                    {r.location_name && (
+                      <p className="text-xs text-gray-500 truncate">📍 {r.location_name}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

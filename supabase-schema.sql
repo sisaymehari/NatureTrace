@@ -36,7 +36,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 CREATE TABLE public.reports (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid REFERENCES public.users(id),
-  category text CHECK (category IN ('wildlife','plant','marine','invasive')),
+  category text CHECK (category IN ('wildlife','plant','marine','invasive','habitat_destruction','illegal_dumping','pollution','environmental_emergency')),
   species_name text,
   description text,
   photo_url text,
@@ -96,3 +96,13 @@ CREATE POLICY "Authenticated users can upload report photos" ON storage.objects
 
 -- Enable Realtime on reports table
 ALTER PUBLICATION supabase_realtime ADD TABLE public.reports;
+
+-- ── Migration: add 4 new threat categories ────────────────────────────────────
+-- Run this in the Supabase SQL editor if the reports table already exists:
+--
+-- ALTER TABLE public.reports DROP CONSTRAINT IF EXISTS reports_category_check;
+-- ALTER TABLE public.reports ADD CONSTRAINT reports_category_check
+--   CHECK (category IN (
+--     'wildlife','plant','marine','invasive',
+--     'habitat_destruction','illegal_dumping','pollution','environmental_emergency'
+--   ));

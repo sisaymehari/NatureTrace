@@ -5,18 +5,27 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { saveToOfflineQueue, flushOfflineQueue } from '@/lib/offline';
 import type { Category, AIIdentifyResult } from '@/types';
-import { CATEGORY_COLORS } from '@/types';
+import { CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
 import toast from 'react-hot-toast';
 import {
   Upload, MapPin, Loader2, AlertTriangle, CheckCircle, Camera, X
 } from 'lucide-react';
 
-const CATEGORIES: { value: Category; label: string }[] = [
-  { value: 'wildlife', label: 'Wildlife' },
-  { value: 'plant', label: 'Plant' },
-  { value: 'marine', label: 'Marine' },
-  { value: 'invasive', label: 'Invasive' },
+const SPECIES_CATS: { value: Category; label: string; icon: string; description: string }[] = [
+  { value: 'wildlife', label: 'Wildlife',  icon: '🦊', description: 'Mammals, birds, reptiles' },
+  { value: 'plant',    label: 'Plant',     icon: '🌿', description: 'Flora & vegetation' },
+  { value: 'marine',   label: 'Marine',    icon: '🐬', description: 'Sea life & coastal' },
+  { value: 'invasive', label: 'Invasive',  icon: '⚠️', description: 'Non-native species' },
 ];
+
+const THREAT_CATS: { value: Category; label: string; icon: string; description: string }[] = [
+  { value: 'habitat_destruction',     label: 'Habitat Loss', icon: '🏚️', description: 'Clearing, development' },
+  { value: 'illegal_dumping',         label: 'Fly-tipping',  icon: '🚯', description: 'Unlawful waste disposal' },
+  { value: 'pollution',               label: 'Pollution',    icon: '💧', description: 'Water, air or soil' },
+  { value: 'environmental_emergency', label: 'Emergency',    icon: '🔥', description: 'Fire, spill, flood' },
+];
+
+const ALL_CATS = [...SPECIES_CATS, ...THREAT_CATS];
 
 export default function ReportPage() {
   const router = useRouter();
@@ -38,6 +47,13 @@ export default function ReportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
 
+  const isThreat = THREAT_CATEGORIES.includes(category);
+
+  // Clear AI result when switching to a threat category
+  useEffect(() => {
+    if (isThreat) setAiResult(null);
+  }, [isThreat]);
+
   // Flush offline queue when back online
   useEffect(() => {
     const flush = () => {
@@ -49,17 +65,15 @@ export default function ReportPage() {
 
   const handlePhoto = async (file: File) => {
     setPhotoFile(file);
-
     try {
       const compress = (await import('browser-image-compression')).default;
       const compressed = await compress(file, { maxSizeMB: 1, maxWidthOrHeight: 1200, useWebWorker: true });
-
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
         setPhotoPreview(base64);
         setPhotoBase64(base64);
-        await identifySpecies(base64);
+        if (!isThreat) await identifySpecies(base64);
       };
       reader.readAsDataURL(compressed);
     } catch {
@@ -89,16 +103,12 @@ export default function ReportPage() {
   };
 
   const detectLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation not supported');
-      return;
-    }
+    if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         setLatitude(pos.coords.latitude);
         setLongitude(pos.coords.longitude);
-        // Reverse geocode using nominatim
         try {
           const r = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`
@@ -108,10 +118,7 @@ export default function ReportPage() {
         } catch {}
         setGpsLoading(false);
       },
-      () => {
-        toast.error('Could not detect location');
-        setGpsLoading(false);
-      }
+      () => { toast.error('Could not detect location'); setGpsLoading(false); }
     );
   };
 
@@ -130,19 +137,14 @@ export default function ReportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!speciesName.trim()) {
-      toast.error('Please enter a species name');
+      toast.error(isThreat ? 'Please enter an incident title' : 'Please enter a species name');
       return;
     }
 
     if (!navigator.onLine) {
       saveToOfflineQueue({
-        category,
-        species_name: speciesName,
-        description,
-        photo_base64: photoBase64,
-        latitude,
-        longitude,
-        location_name: locationName,
+        category, species_name: speciesName, description,
+        photo_base64: photoBase64, latitude, longitude, location_name: locationName,
         queued_at: Date.now(),
       });
       toast('Saved offline. Will upload when connected.', { icon: '📶' });
@@ -153,25 +155,21 @@ export default function ReportPage() {
     setSubmitting(true);
     try {
       let url = photoUrl;
-      if (!url && photoBase64) {
-        url = await uploadPhoto();
-        setPhotoUrl(url);
-      }
+      if (!url && photoBase64) { url = await uploadPhoto(); setPhotoUrl(url); }
+
+      const severity = category === 'environmental_emergency' ? 'high'
+        : isThreat ? 'medium'
+        : (aiResult?.is_invasive ? 'high' : 'low');
 
       const res = await fetch('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          category,
-          species_name: speciesName,
-          description,
-          photo_url: url,
-          latitude,
-          longitude,
-          location_name: locationName,
+          category, species_name: speciesName, description, photo_url: url,
+          latitude, longitude, location_name: locationName,
           ai_confidence: aiResult?.confidence ?? null,
-          is_invasive: aiResult?.is_invasive ?? false,
-          severity: aiResult?.is_invasive ? 'high' : 'low',
+          is_invasive: isThreat ? false : (aiResult?.is_invasive ?? false),
+          severity,
         }),
       });
 
@@ -179,9 +177,7 @@ export default function ReportPage() {
       if (!res.ok) throw new Error(data.error);
 
       let msg = `Report submitted! +${data.eco_points_earned} pts`;
-      if (data.badges_unlocked?.length > 0) {
-        msg += ` 🏆 New badge${data.badges_unlocked.length > 1 ? 's' : ''}!`;
-      }
+      if (data.badges_unlocked?.length > 0) msg += ` 🏆 New badge${data.badges_unlocked.length > 1 ? 's' : ''}!`;
       toast.success(msg, { duration: 4000 });
       router.push('/dashboard');
     } catch (err: any) {
@@ -191,10 +187,13 @@ export default function ReportPage() {
     }
   };
 
+  const catInfo = ALL_CATS.find((c) => c.value === category);
+  const colors = CATEGORY_COLORS[category];
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Submit a Report</h1>
-      <p className="text-gray-500 text-sm mb-6">Help protect UK biodiversity by reporting what you observe.</p>
+      <p className="text-gray-500 text-sm mb-6">Report a species sighting or an environmental threat.</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photo Upload */}
@@ -202,7 +201,6 @@ export default function ReportPage() {
           <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <Camera className="w-4 h-4" /> Photo
           </h2>
-
           {photoPreview ? (
             <div className="relative">
               <div className="relative w-full h-56 rounded-lg overflow-hidden">
@@ -231,21 +229,20 @@ export default function ReportPage() {
             >
               <Upload className="w-8 h-8" />
               <span className="text-sm font-medium">Upload photo</span>
-              <span className="text-xs">AI will identify the species automatically</span>
+              <span className="text-xs">
+                {isThreat ? 'Document the environmental threat' : 'AI will identify the species automatically'}
+              </span>
             </button>
           )}
           <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
+            ref={fileRef} type="file" accept="image/*" capture="environment"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])}
           />
         </div>
 
         {/* AI Result Card */}
-        {aiResult && (
+        {aiResult && !isThreat && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-emerald-600" />
@@ -269,37 +266,71 @@ export default function ReportPage() {
         {/* Category */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <label className="block font-semibold text-gray-800 mb-3">Category</label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {CATEGORIES.map(({ value, label }) => {
-              const colors = CATEGORY_COLORS[value];
+
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Species Sighting</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            {SPECIES_CATS.map(({ value, label, icon, description }) => {
+              const c = CATEGORY_COLORS[value];
+              const active = category === value;
               return (
                 <button
-                  key={value}
-                  type="button"
-                  onClick={() => setCategory(value)}
-                  className={`py-2 rounded-lg text-sm font-medium border transition-all ${
-                    category === value
-                      ? `${colors.bg} ${colors.text} ${colors.border}`
-                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
+                  key={value} type="button" onClick={() => setCategory(value)}
+                  className={`py-2.5 px-2 rounded-lg text-sm font-medium border transition-all flex flex-col items-center gap-0.5 ${
+                    active ? `${c.bg} ${c.text} ${c.border}` : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
                   }`}
                 >
-                  {label}
+                  <span className="text-xl">{icon}</span>
+                  <span className="text-xs font-semibold">{label}</span>
+                  <span className={`text-xs ${active ? 'opacity-70' : 'text-gray-400'}`}>{description}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Environmental Threat</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {THREAT_CATS.map(({ value, label, icon, description }) => {
+              const c = CATEGORY_COLORS[value];
+              const active = category === value;
+              return (
+                <button
+                  key={value} type="button" onClick={() => setCategory(value)}
+                  className={`py-2.5 px-2 rounded-lg text-sm font-medium border transition-all flex flex-col items-center gap-0.5 ${
+                    active ? `${c.bg} ${c.text} ${c.border}` : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-xl">{icon}</span>
+                  <span className="text-xs font-semibold">{label}</span>
+                  <span className={`text-xs ${active ? 'opacity-70' : 'text-gray-400'}`}>{description}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Species & Description */}
+        {/* Threat notice */}
+        {isThreat && (
+          <div className={`${colors.bg} border ${colors.border} rounded-xl p-3 flex items-start gap-2`}>
+            <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${colors.text}`} />
+            <p className={`text-xs ${colors.text}`}>
+              <span className="font-bold">Threat report — </span>
+              this will trigger an automatic NGO alert. Please include as much detail as possible.
+            </p>
+          </div>
+        )}
+
+        {/* Title & Description */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Species Name *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              {isThreat ? 'Incident Title *' : 'Species Name *'}
+            </label>
             <input
               type="text"
               value={speciesName}
               onChange={(e) => setSpeciesName(e.target.value)}
               required
-              placeholder="e.g. Red Kite"
+              placeholder={isThreat ? `e.g. ${catInfo?.icon} Large chemical spill on riverbank` : 'e.g. Red Kite'}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -309,7 +340,7 @@ export default function ReportPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Describe what you observed…"
+              placeholder={isThreat ? 'Describe the threat, its extent, and any immediate risks…' : 'Describe what you observed…'}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
             />
           </div>
@@ -321,22 +352,17 @@ export default function ReportPage() {
             <MapPin className="w-4 h-4" /> Location
           </h2>
           <button
-            type="button"
-            onClick={detectLocation}
-            disabled={gpsLoading}
+            type="button" onClick={detectLocation} disabled={gpsLoading}
             className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-medium py-2 rounded-lg transition-colors disabled:opacity-60 mb-3"
           >
             {gpsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
             {gpsLoading ? 'Detecting…' : 'Auto-detect GPS'}
           </button>
           {latitude && (
-            <p className="text-xs text-gray-500 mb-2">
-              {latitude.toFixed(5)}, {longitude?.toFixed(5)}
-            </p>
+            <p className="text-xs text-gray-500 mb-2">{latitude.toFixed(5)}, {longitude?.toFixed(5)}</p>
           )}
           <input
-            type="text"
-            value={locationName}
+            type="text" value={locationName}
             onChange={(e) => setLocationName(e.target.value)}
             placeholder="Or enter location name (e.g. Dartmoor, Devon)"
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -344,9 +370,10 @@ export default function ReportPage() {
         </div>
 
         <button
-          type="submit"
-          disabled={submitting || identifying}
-          className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+          type="submit" disabled={submitting || identifying}
+          className={`w-full font-semibold py-3 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-white ${
+            isThreat ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-700 hover:bg-emerald-800'
+          }`}
         >
           {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit Report'}
         </button>

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Search, AlertTriangle, Lightbulb } from 'lucide-react';
 import type { Category } from '@/types';
 
-type AppCategory = Category; // 'wildlife' | 'plant' | 'marine' | 'invasive'
+type AppCategory = Category;
 
 interface StatusBadge {
   label: string;
@@ -221,38 +221,92 @@ const SPECIES: Species[] = [
     description: "Originally planted as game cover, this evergreen shrub now forms impenetrable, light-excluding thickets across upland woodland and heathland, eliminating all native ground flora beneath it. It is also a reservoir for Phytophthora ramorum, the pathogen behind sudden oak death.",
     tip: "Report large stands on BioGuard, especially near ancient woodland or upland heathland. Do not plant R. ponticum in gardens — many ornamental cultivars are non-invasive alternatives.",
   },
+
+  // ── Environmental Threats ──────────────────────────────────────────────────
+  {
+    id: 'habitat-destruction',
+    emoji: '🏚️',
+    name: 'Habitat Destruction',
+    scientific: 'Environmental Threat',
+    category: 'habitat_destruction',
+    description: "Habitat destruction is the primary driver of biodiversity loss in the UK, caused by urban development, agricultural intensification, drainage of wetlands, and clearance of hedgerows and ancient woodland. Once a habitat is gone it may take centuries to recover, or may never return at all.",
+    tip: "If you witness unlawful clearance of vegetation, woodland, or wetland, photograph it and report it to your local planning authority and Natural England. Log it on BioGuard with GPS coordinates.",
+  },
+  {
+    id: 'illegal-dumping',
+    emoji: '🚯',
+    name: 'Illegal Dumping',
+    scientific: 'Environmental Threat',
+    category: 'illegal_dumping',
+    description: "Fly-tipping — the illegal disposal of waste on land — costs local authorities over £50 million a year to clear in England alone. Dumped waste leaches toxins into soil and waterways, kills vegetation, and provides breeding grounds for rats and other pest species.",
+    tip: "Never move or disturb dumped material — it may contain hazardous substances. Report fly-tipping to your local council or use the BioGuard app with photos and coordinates. It is a criminal offence carrying fines up to £50,000.",
+  },
+  {
+    id: 'pollution',
+    emoji: '💧',
+    name: 'Pollution',
+    scientific: 'Environmental Threat',
+    category: 'pollution',
+    description: "Water, soil, and air pollution affect virtually every UK habitat — from agricultural run-off choking rivers with nitrates and phosphates, to plastic microparticles infiltrating marine food chains. Pollution is a leading cause of fish kills, harmful algal blooms, and the collapse of invertebrate populations.",
+    tip: "Report discoloured water, dead fish, or unusual foam or smells in rivers immediately to the Environment Agency (0800 807060). Photograph the source if safe to do so and log the location on BioGuard.",
+  },
+  {
+    id: 'environmental-emergency',
+    emoji: '🔥',
+    name: 'Environmental Emergency',
+    scientific: 'Environmental Threat',
+    category: 'environmental_emergency',
+    description: "Environmental emergencies — including wildfires, chemical spills, oil slicks, and severe flooding — can devastate habitats and wildlife populations in hours. Climate change is making such events more frequent and severe across the UK, particularly large heath and moorland fires in dry summers.",
+    tip: "Call 999 immediately for active fires or dangerous chemical spills. Once safe, report the incident on BioGuard and the Environment Agency hotline (0800 807060) with photos, location, and estimated scale.",
+  },
 ];
 
-const CATEGORY_STYLE: Record<AppCategory, { bg: string; text: string; border: string; filterBg: string }> = {
-  wildlife: { bg: 'bg-amber-100',  text: 'text-amber-800',  border: 'border-amber-300',  filterBg: 'bg-amber-600' },
-  plant:    { bg: 'bg-green-100',  text: 'text-green-800',  border: 'border-green-300',  filterBg: 'bg-green-600' },
-  marine:   { bg: 'bg-blue-100',   text: 'text-blue-800',   border: 'border-blue-300',   filterBg: 'bg-blue-600' },
-  invasive: { bg: 'bg-red-100',    text: 'text-red-800',    border: 'border-red-300',    filterBg: 'bg-red-600' },
+const THREAT_CATS_SET = new Set(['habitat_destruction', 'illegal_dumping', 'pollution', 'environmental_emergency']);
+
+const CATEGORY_STYLE: Record<string, { bg: string; text: string; border: string; filterBg: string }> = {
+  wildlife:                { bg: 'bg-amber-100',  text: 'text-amber-800',  border: 'border-amber-300',  filterBg: 'bg-amber-600' },
+  plant:                   { bg: 'bg-green-100',  text: 'text-green-800',  border: 'border-green-300',  filterBg: 'bg-green-600' },
+  marine:                  { bg: 'bg-blue-100',   text: 'text-blue-800',   border: 'border-blue-300',   filterBg: 'bg-blue-600' },
+  invasive:                { bg: 'bg-red-100',    text: 'text-red-800',    border: 'border-red-300',    filterBg: 'bg-red-600' },
+  habitat_destruction:     { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300', filterBg: 'bg-orange-600' },
+  illegal_dumping:         { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', filterBg: 'bg-yellow-500' },
+  pollution:               { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300', filterBg: 'bg-purple-600' },
+  environmental_emergency: { bg: 'bg-rose-100',   text: 'text-rose-900',   border: 'border-rose-400',   filterBg: 'bg-rose-700' },
 };
 
-const EMOJI_BG: Record<AppCategory, string> = {
-  wildlife: 'bg-amber-50',
-  plant:    'bg-green-50',
-  marine:   'bg-blue-50',
-  invasive: 'bg-red-50',
+const EMOJI_BG: Record<string, string> = {
+  wildlife:                'bg-amber-50',
+  plant:                   'bg-green-50',
+  marine:                  'bg-blue-50',
+  invasive:                'bg-red-50',
+  habitat_destruction:     'bg-orange-50',
+  illegal_dumping:         'bg-yellow-50',
+  pollution:               'bg-purple-50',
+  environmental_emergency: 'bg-rose-50',
 };
 
-const FILTERS: { label: string; value: AppCategory | 'all' }[] = [
+type FilterValue = AppCategory | 'all' | 'threats';
+
+const FILTERS: { label: string; value: FilterValue }[] = [
   { label: 'All',      value: 'all' },
   { label: 'Wildlife', value: 'wildlife' },
   { label: 'Plants',   value: 'plant' },
   { label: 'Marine',   value: 'marine' },
   { label: 'Invasive', value: 'invasive' },
+  { label: '⚠️ Threats', value: 'threats' },
 ];
 
 export default function LearnPage() {
-  const [search, setSearch]   = useState('');
-  const [active, setActive]   = useState<AppCategory | 'all'>('all');
+  const [search, setSearch] = useState('');
+  const [active, setActive] = useState<FilterValue>('all');
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return SPECIES.filter((s) => {
-      const matchesCat  = active === 'all' || s.category === active;
+      const matchesCat =
+        active === 'all' ? true
+        : active === 'threats' ? THREAT_CATS_SET.has(s.category)
+        : s.category === active;
       const matchesText = !q || s.name.toLowerCase().includes(q) || s.scientific.toLowerCase().includes(q) || s.category.includes(q);
       return matchesCat && matchesText;
     });
@@ -261,7 +315,7 @@ export default function LearnPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Learn &amp; Discover</h1>
-      <p className="text-gray-500 text-sm mb-6">20 UK species to know — wildlife, plants, marine life, and invasive threats.</p>
+      <p className="text-gray-500 text-sm mb-6">24 entries — UK species, invasive threats, and environmental hazards to know and report.</p>
 
       {/* Search */}
       <div className="relative mb-4">
@@ -279,7 +333,8 @@ export default function LearnPage() {
       <div className="flex gap-2 mb-7 flex-wrap">
         {FILTERS.map(({ label, value }) => {
           const isActive = active === value;
-          const style = value !== 'all' ? CATEGORY_STYLE[value as AppCategory] : null;
+          const style = value !== 'all' && value !== 'threats' ? CATEGORY_STYLE[value] : null;
+          const threatActive = value === 'threats' && isActive;
           return (
             <button
               key={value}
@@ -288,7 +343,9 @@ export default function LearnPage() {
                 isActive
                   ? style
                     ? `${style.filterBg} text-white border-transparent`
-                    : 'bg-emerald-700 text-white border-emerald-700'
+                    : threatActive
+                      ? 'bg-orange-600 text-white border-transparent'
+                      : 'bg-emerald-700 text-white border-emerald-700'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
               }`}
             >
@@ -297,7 +354,7 @@ export default function LearnPage() {
           );
         })}
         <span className="ml-auto text-xs text-gray-400 self-center">
-          {filtered.length} species
+          {filtered.length} {active === 'threats' ? 'threats' : 'species'}
         </span>
       </div>
 
@@ -307,7 +364,7 @@ export default function LearnPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((s) => {
-            const cs = CATEGORY_STYLE[s.category];
+            const cs = CATEGORY_STYLE[s.category] ?? CATEGORY_STYLE['wildlife'];
             return (
               <div
                 key={s.id}
@@ -324,8 +381,13 @@ export default function LearnPage() {
                     <h3 className="font-bold text-gray-900 text-base leading-tight">{s.name}</h3>
                     <p className="text-xs text-gray-400 italic mt-0.5">{s.scientific}</p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${cs.bg} ${cs.text} ${cs.border}`}>
-                        {s.category === 'plant' ? 'Plant' : s.category.charAt(0).toUpperCase() + s.category.slice(1)}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cs.bg} ${cs.text} ${cs.border}`}>
+                        {s.category === 'plant' ? 'Plant'
+                          : s.category === 'habitat_destruction' ? 'Habitat Loss'
+                          : s.category === 'illegal_dumping' ? 'Illegal Dumping'
+                          : s.category === 'pollution' ? 'Pollution'
+                          : s.category === 'environmental_emergency' ? 'Emergency'
+                          : s.category.charAt(0).toUpperCase() + s.category.slice(1)}
                       </span>
                       {s.status && (
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 ${s.status.color}`}>
