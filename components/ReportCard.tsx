@@ -1,7 +1,6 @@
 import type { Report } from '@/types';
 import { CATEGORY_COLORS } from '@/types';
-import Image from 'next/image';
-import { MapPin, Clock, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { MapPin, Clock, CheckCircle, Loader } from 'lucide-react';
 
 interface Props {
   report: Report;
@@ -20,14 +19,11 @@ export default function ReportCard({ report }: Props) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex gap-0">
       {report.photo_url && (
-        <div className="relative w-24 h-24 flex-shrink-0">
-          <Image
-            src={report.photo_url}
-            alt={report.species_name}
-            fill
-            className="object-cover"
-          />
-        </div>
+        <img
+          src={report.photo_url}
+          alt={report.species_name}
+          className="w-24 h-24 flex-shrink-0 object-cover"
+        />
       )}
       <div className="p-3 flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">

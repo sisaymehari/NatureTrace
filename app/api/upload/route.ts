@@ -18,17 +18,23 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(base64Data, 'base64');
     const path = `${user.id}/${Date.now()}.jpg`;
 
+    console.log('[/api/upload] user=%s size=%dKB path=%s', user.id, Math.round(buffer.length / 1024), path);
+
     const service = createServiceRoleClient();
     const { error } = await service.storage
       .from('reports')
       .upload(path, buffer, { contentType: 'image/jpeg', upsert: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[/api/upload] storage error:', JSON.stringify(error));
+      throw error;
+    }
 
     const { data } = service.storage.from('reports').getPublicUrl(path);
+    console.log('[/api/upload] public url:', data.publicUrl);
     return NextResponse.json({ url: data.publicUrl });
   } catch (err: any) {
-    console.error('[/api/upload]', err);
+    console.error('[/api/upload] caught:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

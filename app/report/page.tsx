@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase';
 import { saveToOfflineQueue, flushOfflineQueue } from '@/lib/offline';
 import type { Category, AIIdentifyResult } from '@/types';
 import { CATEGORY_COLORS } from '@/types';
@@ -21,7 +20,6 @@ const CATEGORIES: { value: Category; label: string }[] = [
 
 export default function ReportPage() {
   const router = useRouter();
-  const supabase = createClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<Category>('wildlife');
@@ -118,21 +116,15 @@ export default function ReportPage() {
   };
 
   const uploadPhoto = async (): Promise<string | null> => {
-    if (!photoFile) return null;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const ext = photoFile.name.split('.').pop();
-    const path = `${user.id}/${Date.now()}.${ext}`;
-
-    const compress = (await import('browser-image-compression')).default;
-    const compressed = await compress(photoFile, { maxSizeMB: 1, maxWidthOrHeight: 1200 });
-
-    const { error } = await supabase.storage.from('reports').upload(path, compressed);
-    if (error) throw error;
-
-    const { data } = supabase.storage.from('reports').getPublicUrl(path);
-    return data.publicUrl;
+    if (!photoBase64) return null;
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_base64: photoBase64 }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? 'Photo upload failed');
+    return json.url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,7 +153,7 @@ export default function ReportPage() {
     setSubmitting(true);
     try {
       let url = photoUrl;
-      if (!url && photoFile) {
+      if (!url && photoBase64) {
         url = await uploadPhoto();
         setPhotoUrl(url);
       }

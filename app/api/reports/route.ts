@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { category, species_name, description, photo_url, latitude, longitude, location_name, ai_confidence, is_invasive, severity } = body;
 
-    console.log('[POST /api/reports] user.id=%s service_role_key_set=%s', user.id, !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('[POST /api/reports] user.id=%s', user.id);
     const service = createServiceRoleClient();
 
     // Ensure the user row exists before inserting a report (FK constraint: reports.user_id → users.id)
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         reports_count: 0,
       });
       if (createUserError && createUserError.code !== '23505') {
-        console.error('[POST /api/reports] failed to create user row:', createUserError.message);
+        console.error('[POST /api/reports] failed to create user row:', JSON.stringify(createUserError));
         throw createUserError;
       }
     }
@@ -64,27 +64,31 @@ export async function POST(req: NextRequest) {
       ? `SRID=4326;POINT(${longitude} ${latitude})`
       : null;
 
-    const { data: report, error: insertError } = await service
+    const insertPayload = {
+      user_id: user.id,
+      category,
+      species_name,
+      description,
+      photo_url: photo_url ?? null,
+      location,
+      location_name: location_name ?? null,
+      ai_confidence: ai_confidence ?? null,
+      is_invasive: is_invasive ?? false,
+      severity: severity ?? 'low',
+      status: 'pending',
+    };
+    console.log('[POST /api/reports] inserting:', JSON.stringify(insertPayload));
+
+    // Use the session-authenticated client so the RLS policy
+    // "WITH CHECK (auth.uid() = user_id)" is satisfied by the user's JWT.
+    const { data: report, error: insertError } = await supabase
       .from('reports')
-      .insert({
-        user_id: user.id,
-        category,
-        species_name,
-        description,
-        photo_url: photo_url ?? null,
-        location,
-        location_name: location_name ?? null,
-        ai_confidence: ai_confidence ?? null,
-        is_invasive: is_invasive ?? false,
-        severity: severity ?? 'low',
-        status: 'pending',
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
     if (insertError) {
-      console.error('[POST /api/reports] insert error code=%s message=%s details=%s hint=%s',
-        insertError.code, insertError.message, insertError.details, insertError.hint);
+      console.error('[POST /api/reports] insert error:', JSON.stringify(insertError));
       throw insertError;
     }
 
