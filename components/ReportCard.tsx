@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Report } from '@/types';
 import { CATEGORY_COLORS } from '@/types';
 import { MapPin, Clock, CheckCircle, Loader } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function ReportCard({ report }: Props) {
   const timeAgo = getTimeAgo(report.created_at);
 
   return (
+    <Link href={`/report/${report.id}`} className="block">
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex gap-0">
       {report.photo_url && (
         <img
@@ -50,6 +52,7 @@ export default function ReportCard({ report }: Props) {
         </div>
       </div>
     </div>
+    </Link>
   );
 }
 

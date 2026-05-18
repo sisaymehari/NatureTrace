@@ -123,6 +123,7 @@ export default function Map({ initialReports, activeCategory }: Props) {
           <h3 style="margin:0 0 4px;font-size:14px;font-weight:700;color:#111">${report.species_name}</h3>
           <p style="margin:0 0 6px;font-size:12px;color:#555;line-height:1.4">${report.description?.slice(0, 100) ?? ''}${(report.description?.length ?? 0) > 100 ? '…' : ''}</p>
           <div style="font-size:11px;color:#888">${report.location_name ?? ''} · ${date}</div>
+          <a href="/report/${report.id}" style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:#1D6A48;text-decoration:none;">View details →</a>
         </div>
       </div>
     `;
