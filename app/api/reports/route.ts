@@ -152,6 +152,11 @@ export async function GET(req: NextRequest) {
       query = query.eq('category', category);
     }
 
+    const isInvasive = searchParams.get('is_invasive');
+    if (isInvasive === 'true') {
+      query = query.eq('is_invasive', true);
+    }
+
     const { data, error } = await query;
     if (error) throw error;
 

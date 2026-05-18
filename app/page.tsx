@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import CategoryFilter from '@/components/CategoryFilter';
+import InvasiveAlerts from '@/components/InvasiveAlerts';
 import type { Category, Report } from '@/types';
 import { MapPin, TreePine } from 'lucide-react';
 
@@ -52,7 +53,7 @@ export default function HomePage() {
       </div>
 
       {/* Map */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         {loading ? (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
             <div className="text-gray-400 text-sm animate-pulse">Loading reports…</div>
@@ -60,6 +61,7 @@ export default function HomePage() {
         ) : (
           <Map initialReports={reports} activeCategory={activeCategory} />
         )}
+        <InvasiveAlerts />
       </div>
 
       {/* Floating submit button */}
