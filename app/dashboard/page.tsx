@@ -7,6 +7,7 @@ import { BADGES, CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
 import {
   BarChart3, Users, TreePine, Trophy, AlertTriangle,
   CalendarDays, MapPin, Award, TrendingUp, TrendingDown, Minus,
+  Download, Loader2,
 } from 'lucide-react';
 
 const RANK_STYLE = [
@@ -78,6 +79,7 @@ export default function DashboardPage() {
   const [loading, setLoading]       = useState(true);
   const [stats, setStats]           = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [exporting, setExporting]   = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,6 +117,28 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/export');
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const date = new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bioguard-reports-${date}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const speciesReports = reports.filter((r) => !THREAT_CATEGORIES.includes(r.category));
   const threatReports  = reports.filter((r) => THREAT_CATEGORIES.includes(r.category));
 
@@ -126,7 +150,26 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Community Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Community Dashboard</h1>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="flex items-center gap-2 text-sm font-medium bg-white border border-gray-200 hover:border-emerald-400 hover:text-emerald-700 text-gray-600 px-4 py-2 rounded-lg shadow-sm transition-colors disabled:opacity-60"
+        >
+          {exporting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating…
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Export Reports
+            </>
+          )}
+        </button>
+      </div>
 
       {/* ── Impact stats ── */}
       <div className="mb-6">
