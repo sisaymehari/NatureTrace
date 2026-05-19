@@ -137,9 +137,6 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* DEBUG — remove once streak is confirmed */}
-          <p className="mt-4 text-xs text-red-500 font-mono">DEBUG: streak={streak}</p>
-
           {/* Eco-points progress bar */}
           <div className="mt-5">
             <div className="flex items-center justify-between mb-1.5">
