@@ -3,7 +3,8 @@ import { Resend } from 'resend';
 import { createServiceRoleClient } from '@/lib/supabase-server';
 import { getAlertContacts } from '@/lib/alert-contacts';
 
-const FROM = process.env.ALERT_FROM_EMAIL ?? 'BioGuard Alerts <onboarding@resend.dev>';
+const FROM = 'onboarding@resend.dev';
+const TO   = 'meharisisay6@gmail.com';
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
 // ── Who-can-help info (mirrors report detail page) ────────────────────────────
@@ -269,8 +270,8 @@ export async function POST(req: NextRequest) {
     const results = await Promise.allSettled(
       contacts.map((contact) =>
         resend.emails.send({
-          from: FROM,
-          to:   contact.email,
+          from:    FROM,
+          to:      TO,
           subject,
           html,
         })
