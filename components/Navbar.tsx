@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { Shield, Menu, X } from 'lucide-react';
+import { Shield, Menu, X, Download } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -13,6 +13,8 @@ export default function Navbar() {
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -21,6 +23,24 @@ export default function Navbar() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    setInstalling(true);
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') setInstallPrompt(null);
+    setInstalling(false);
+  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -66,6 +86,17 @@ export default function Navbar() {
 
           {/* Auth */}
           <div className="hidden md:flex items-center gap-2">
+            {installPrompt && (
+              <button
+                onClick={handleInstall}
+                disabled={installing}
+                className="flex items-center gap-1.5 text-sm bg-emerald-600 hover:bg-emerald-500 px-3 py-2 rounded-md transition-colors disabled:opacity-60"
+                title="Install BioGuard app"
+              >
+                <Download className="w-4 h-4" />
+                Install
+              </button>
+            )}
             {user ? (
               <>
                 <Link
@@ -125,6 +156,16 @@ export default function Navbar() {
             </Link>
           ))}
           <hr className="border-emerald-600 my-2" />
+          {installPrompt && (
+            <button
+              onClick={() => { handleInstall(); setMenuOpen(false); }}
+              disabled={installing}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm hover:bg-emerald-600 transition-colors disabled:opacity-60"
+            >
+              <Download className="w-4 h-4" />
+              Install App
+            </button>
+          )}
           {user ? (
             <>
               <Link href="/profile" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">

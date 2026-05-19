@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Shield body -->
+  <path d="M96 8 L172 38 L172 96 C172 144 138 174 96 186 C54 174 20 144 20 96 L20 38 Z" fill="#1D6A48"/>
+  <!-- Inner shield highlight -->
+  <path d="M96 22 L158 48 L158 96 C158 136 130 162 96 172 C62 162 34 136 34 96 L34 48 Z" fill="#2A8A5E"/>
+  <!-- Tree trunk -->
+  <rect x="89" y="118" width="14" height="30" rx="4" fill="white"/>
+  <!-- Tree canopy layers -->
+  <polygon points="96,48 66,98 126,98" fill="white"/>
+  <polygon points="96,68 70,112 122,112" fill="white"/>
+</svg>
