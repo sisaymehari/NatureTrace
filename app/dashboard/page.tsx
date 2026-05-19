@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import ReportCard from '@/components/ReportCard';
 import type { Report, User } from '@/types';
 import { BADGES, CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
-import { BarChart3, Users, TreePine, Trophy, AlertTriangle } from 'lucide-react';
+import {
+  BarChart3, Users, TreePine, Trophy, AlertTriangle,
+  CalendarDays, MapPin, Award, TrendingUp, TrendingDown, Minus,
+} from 'lucide-react';
 
 const RANK_STYLE = [
-  { color: 'text-yellow-500', bg: 'bg-yellow-50 border-yellow-200', label: '1st' },
-  { color: 'text-gray-400',   bg: 'bg-gray-50 border-gray-200',     label: '2nd' },
-  { color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200',   label: '3rd' },
+  { color: 'text-yellow-500', bg: 'bg-yellow-50 border-yellow-200' },
+  { color: 'text-gray-400',   bg: 'bg-gray-50 border-gray-200' },
+  { color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200' },
 ] as const;
 
 const THREAT_ICON: Record<string, string> = {
@@ -19,11 +22,62 @@ const THREAT_ICON: Record<string, string> = {
   environmental_emergency: '🔥',
 };
 
+const CHART_CATEGORIES = [
+  'wildlife', 'plant', 'marine', 'invasive',
+  'habitat_destruction', 'illegal_dumping', 'pollution', 'environmental_emergency',
+] as const;
+
+const CHART_LABELS: Record<string, string> = {
+  wildlife:                'Wildlife',
+  plant:                   'Plants',
+  marine:                  'Marine',
+  invasive:                'Invasive',
+  habitat_destruction:     'Habitat',
+  illegal_dumping:         'Dumping',
+  pollution:               'Pollution',
+  environmental_emergency: 'Emergency',
+};
+
+interface Stats {
+  totalThisMonth:    number;
+  totalLastMonth:    number;
+  uniqueSpecies:     number;
+  invasiveThisMonth: number;
+  invasiveLastMonth: number;
+  threatsThisMonth:  number;
+  threatsLastMonth:  number;
+  mostActiveRegion:  string | null;
+  mostReportedSpecies: string | null;
+  categoryCounts:    Record<string, number>;
+}
+
+function Trend({ now, prev }: { now: number; prev: number }) {
+  if (prev === 0 && now === 0) return null;
+  const diff = now - prev;
+  if (diff > 0) return (
+    <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-600">
+      <TrendingUp className="w-3 h-3" />+{diff} vs last month
+    </span>
+  );
+  if (diff < 0) return (
+    <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500">
+      <TrendingDown className="w-3 h-3" />{diff} vs last month
+    </span>
+  );
+  return (
+    <span className="flex items-center gap-0.5 text-xs text-gray-400">
+      <Minus className="w-3 h-3" />Same as last month
+    </span>
+  );
+}
+
 export default function DashboardPage() {
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports]       = useState<Report[]>([]);
   const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [memberCount, setMemberCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]       = useState(true);
+  const [stats, setStats]           = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,27 +102,163 @@ export default function DashboardPage() {
 
       setLoading(false);
     };
+
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/stats');
+        if (res.ok) setStats(await res.json());
+      } catch {}
+      setStatsLoading(false);
+    };
+
     fetchData();
+    fetchStats();
   }, []);
 
   const speciesReports = reports.filter((r) => !THREAT_CATEGORIES.includes(r.category));
   const threatReports  = reports.filter((r) => THREAT_CATEGORIES.includes(r.category));
-  const speciesCount   = new Set(speciesReports.map((r) => r.species_name)).size;
 
-  const STATS = [
-    { label: 'Total Reports',   value: reports.length,        icon: BarChart3,     color: 'text-emerald-600' },
-    { label: 'Species Sighted', value: speciesCount,          icon: TreePine,      color: 'text-green-600' },
-    { label: 'Threats Filed',   value: threatReports.length,  icon: AlertTriangle, color: 'text-orange-600' },
-    { label: 'Members',         value: memberCount,           icon: Users,         color: 'text-blue-600' },
-  ];
+  const maxCatCount = stats
+    ? Math.max(1, ...CHART_CATEGORIES.map((c) => stats.categoryCounts[c] ?? 0))
+    : 1;
+
+  const monthName = new Date().toLocaleDateString('en-GB', { month: 'long' });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Community Dashboard</h1>
 
-      {/* Stat Cards */}
+      {/* ── Impact stats ── */}
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          {monthName} Impact
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+          {/* Reports this month */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500">Reports This Month</span>
+              <CalendarDays className="w-4 h-4 text-emerald-500" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {statsLoading ? '…' : stats?.totalThisMonth ?? 0}
+            </p>
+            {stats && <Trend now={stats.totalThisMonth} prev={stats.totalLastMonth} />}
+          </div>
+
+          {/* Unique species */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500">Species Identified</span>
+              <TreePine className="w-4 h-4 text-green-500" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {statsLoading ? '…' : stats?.uniqueSpecies ?? 0}
+            </p>
+            <span className="text-xs text-gray-400">unique species (all time)</span>
+          </div>
+
+          {/* Invasive flagged */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500">Invasive Flagged</span>
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {statsLoading ? '…' : stats?.invasiveThisMonth ?? 0}
+            </p>
+            {stats && <Trend now={stats.invasiveThisMonth} prev={stats.invasiveLastMonth} />}
+          </div>
+
+          {/* Threats reported */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500">Threats Reported</span>
+              <BarChart3 className="w-4 h-4 text-orange-500" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {statsLoading ? '…' : stats?.threatsThisMonth ?? 0}
+            </p>
+            {stats && <Trend now={stats.threatsThisMonth} prev={stats.threatsLastMonth} />}
+          </div>
+
+          {/* Most active region */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500">Most Active Region</span>
+              <MapPin className="w-4 h-4 text-blue-500" />
+            </div>
+            <p className="text-base font-bold text-gray-900 leading-tight mt-1 truncate">
+              {statsLoading ? '…' : (stats?.mostActiveRegion ?? '—')}
+            </p>
+            <span className="text-xs text-gray-400">by report volume</span>
+          </div>
+
+          {/* Most reported species */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500">Top Species</span>
+              <Award className="w-4 h-4 text-yellow-500" />
+            </div>
+            <p className="text-base font-bold text-gray-900 leading-tight mt-1 truncate">
+              {statsLoading ? '…' : (stats?.mostReportedSpecies ?? '—')}
+            </p>
+            <span className="text-xs text-gray-400">most reported</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bar chart ── */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          Reports by Category
+        </h2>
+        {statsLoading ? (
+          <div className="space-y-3">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-6 bg-gray-100 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {CHART_CATEGORIES.map((cat) => {
+              const count = stats?.categoryCounts[cat] ?? 0;
+              const pct   = Math.round((count / maxCatCount) * 100);
+              const pin   = CATEGORY_COLORS[cat]?.pin ?? '#6B7280';
+              return (
+                <div key={cat} className="flex items-center gap-3">
+                  <span className="w-20 text-xs text-gray-500 text-right flex-shrink-0 truncate">
+                    {CHART_LABELS[cat]}
+                  </span>
+                  <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                    <div
+                      className="h-5 rounded-full flex items-center justify-end pr-2 transition-all duration-700"
+                      style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%`, backgroundColor: pin }}
+                    >
+                      {count > 0 && (
+                        <span className="text-white text-xs font-bold leading-none">{count}</span>
+                      )}
+                    </div>
+                  </div>
+                  {count === 0 && (
+                    <span className="text-xs text-gray-300 w-4">0</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Community stats row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        {STATS.map(({ label, value, icon: Icon, color }) => (
+        {[
+          { label: 'Total Reports',   value: reports.length,       icon: BarChart3,     color: 'text-emerald-600' },
+          { label: 'Species Sighted', value: new Set(speciesReports.map(r => r.species_name)).size, icon: TreePine, color: 'text-green-600' },
+          { label: 'Threats Filed',   value: threatReports.length, icon: AlertTriangle, color: 'text-orange-600' },
+          { label: 'Members',         value: memberCount,          icon: Users,         color: 'text-blue-600' },
+        ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -85,8 +275,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* ── Sightings + Leaderboard ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Recent species sightings */}
         <div className="lg:col-span-2">
           <h2 className="text-lg font-semibold text-gray-800 mb-3">Recent Sightings</h2>
           {loading ? (
@@ -108,7 +298,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Leaderboard */}
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" /> Top Reporters
@@ -168,7 +357,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Threat reports section */}
+      {/* ── Threat reports ── */}
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-orange-500" /> Environmental Threats
@@ -187,7 +376,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {threatReports.slice(0, 6).map((r) => {
               const colors = CATEGORY_COLORS[r.category];
-              const icon = THREAT_ICON[r.category] ?? '⚠️';
+              const icon   = THREAT_ICON[r.category] ?? '⚠️';
               return (
                 <a key={r.id} href={`/report/${r.id}`} className="block">
                   <div className={`rounded-xl border ${colors.border} ${colors.bg} p-4 hover:shadow-md transition-shadow`}>
@@ -195,9 +384,7 @@ export default function DashboardPage() {
                       <span className="text-2xl flex-shrink-0">{icon}</span>
                       <div className="min-w-0">
                         <p className={`text-sm font-bold truncate ${colors.text}`}>{r.species_name}</p>
-                        <p className="text-xs text-gray-500 capitalize">
-                          {r.category.replace(/_/g, ' ')}
-                        </p>
+                        <p className="text-xs text-gray-500 capitalize">{r.category.replace(/_/g, ' ')}</p>
                       </div>
                     </div>
                     {r.location_name && (
