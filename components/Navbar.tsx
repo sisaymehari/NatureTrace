@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { Shield, Menu, X, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -17,7 +18,26 @@ export default function Navbar() {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(async ({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        try {
+          const res = await fetch('/api/streak', { method: 'POST' });
+          if (res.ok) {
+            const { streak, changed, badges_unlocked } = await res.json();
+            if (changed && streak > 1) {
+              toast(`🔥 ${streak} day streak! Keep it up!`, { duration: 4000 });
+            }
+            if (badges_unlocked?.length) {
+              badges_unlocked.forEach((id: string) => {
+                const label = id === 'streak_7' ? '7-Day Streak' : '30-Day Streak';
+                toast(`🏅 New badge unlocked: ${label}!`, { duration: 5000 });
+              });
+            }
+          }
+        } catch {}
+      }
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
     });

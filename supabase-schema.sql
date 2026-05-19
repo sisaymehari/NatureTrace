@@ -106,3 +106,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.reports;
 --     'wildlife','plant','marine','invasive',
 --     'habitat_destruction','illegal_dumping','pollution','environmental_emergency'
 --   ));
+
+-- ── Migration: add daily login streak columns ──────────────────────────────────
+-- Run this in the Supabase SQL editor if the users table already exists:
+--
+-- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_streak integer DEFAULT 0;
+-- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login_date date;

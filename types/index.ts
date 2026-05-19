@@ -41,6 +41,8 @@ export interface User {
   eco_points: number;
   badge_ids: string[];
   reports_count: number;
+  current_streak: number;
+  last_login_date: string | null;
   created_at: string;
 }
 
@@ -81,4 +83,6 @@ export const BADGES: Record<string, { label: string; icon: string; description: 
   invasive_spotter: { label: 'Invasive Spotter', icon: '🚨', description: 'Reported 3 invasive species' },
   verified_10:      { label: 'Verified Expert',  icon: '✅', description: '10 verified reports' },
   top_reporter:     { label: 'Top Reporter',     icon: '🏆', description: 'Earned 500+ eco points' },
+  streak_7:         { label: '7-Day Streak',     icon: '🔥', description: 'Logged in 7 days in a row' },
+  streak_30:        { label: '30-Day Streak',    icon: '🌋', description: 'Logged in 30 days in a row' },
 };

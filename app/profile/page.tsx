@@ -99,6 +99,11 @@ export default function ProfilePage() {
                 Member since {new Date(user.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
               </p>
             </div>
+            {(user.current_streak ?? 0) > 0 && (
+              <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-700 font-bold text-sm px-3 py-1.5 rounded-full flex-shrink-0">
+                🔥 {user.current_streak} day streak
+              </div>
+            )}
           </div>
 
           {/* Stats row */}
