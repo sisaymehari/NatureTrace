@@ -4,7 +4,8 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 export async function POST() {
   try {
     const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('[POST /api/streak] auth user:', user?.id ?? null, 'authError:', authError?.message ?? null);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const service = createServiceRoleClient();
@@ -15,7 +16,14 @@ export async function POST() {
       .eq('id', user.id)
       .single();
 
-    if (fetchError || !userData) {
+    console.log('[POST /api/streak] userData:', JSON.stringify(userData), 'fetchError:', fetchError?.message ?? null);
+
+    if (fetchError) {
+      // Columns may not exist yet — return gracefully so the client knows
+      console.error('[POST /api/streak] DB fetch error (migration may be needed):', fetchError.message);
+      return NextResponse.json({ streak: 0, changed: false, badges_unlocked: [], db_error: fetchError.message });
+    }
+    if (!userData) {
       return NextResponse.json({ streak: 0, changed: false, badges_unlocked: [] });
     }
 
@@ -50,11 +58,12 @@ export async function POST() {
       updatePayload.badge_ids = [...badgeIds, ...newBadges];
     }
 
-    await service.from('users').update(updatePayload).eq('id', user.id);
+    const { error: updateError } = await service.from('users').update(updatePayload).eq('id', user.id);
+    console.log('[POST /api/streak] update result - newStreak:', newStreak, 'updateError:', updateError?.message ?? null);
 
     return NextResponse.json({ streak: newStreak, changed, badges_unlocked: newBadges });
   } catch (err: any) {
-    console.error('[POST /api/streak]', err);
+    console.error('[POST /api/streak] caught exception:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -37,6 +37,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState<string>('');
   const [reports, setReports] = useState<Report[]>([]);
+  const [streak, setStreak] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,13 +48,24 @@ export default function ProfilePage() {
 
       setEmail(authUser.email ?? '');
 
-      const [{ data: profile }, { data: userReports }] = await Promise.all([
-        supabase.from('users').select('*').eq('id', authUser.id).single(),
+      const [{ data: profile }, { data: userReports }, streakRes] = await Promise.all([
+        supabase.from('users').select('id, username, avatar_url, eco_points, badge_ids, reports_count, current_streak, last_login_date, created_at').eq('id', authUser.id).single(),
         supabase.from('reports').select('*').eq('user_id', authUser.id).order('created_at', { ascending: false }),
+        fetch('/api/streak', { method: 'POST' }),
       ]);
 
-      setUser(profile as User);
+      const profileData = profile as User;
+      setUser(profileData);
       setReports((userReports as Report[]) ?? []);
+
+      if (streakRes.ok) {
+        const { streak: s } = await streakRes.json();
+        console.log('[Profile] streak from API:', s);
+        setStreak(s ?? profileData?.current_streak ?? 0);
+      } else {
+        setStreak(profileData?.current_streak ?? 0);
+      }
+
       setLoading(false);
     };
     load();
@@ -99,9 +111,9 @@ export default function ProfilePage() {
                 Member since {new Date(user.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
               </p>
             </div>
-            {(user.current_streak ?? 0) > 0 && (
+            {streak > 0 && (
               <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-700 font-bold text-sm px-3 py-1.5 rounded-full flex-shrink-0">
-                🔥 {user.current_streak} day streak
+                🔥 {streak} day streak
               </div>
             )}
           </div>

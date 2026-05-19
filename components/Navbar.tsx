@@ -22,10 +22,16 @@ export default function Navbar() {
       setUser(data.user);
       if (data.user) {
         try {
+          console.log('[Navbar] calling /api/streak for user', data.user.id);
           const res = await fetch('/api/streak', { method: 'POST' });
+          const body = await res.json();
+          console.log('[Navbar] /api/streak response', res.status, JSON.stringify(body));
           if (res.ok) {
-            const { streak, changed, badges_unlocked } = await res.json();
-            if (changed && streak > 1) {
+            const { streak, changed, badges_unlocked, db_error } = body;
+            if (db_error) {
+              console.error('[Navbar] streak db_error — run migration:', db_error);
+            }
+            if (changed && streak > 0) {
               toast(`🔥 ${streak} day streak! Keep it up!`, { duration: 4000 });
             }
             if (badges_unlocked?.length) {
@@ -34,8 +40,12 @@ export default function Navbar() {
                 toast(`🏅 New badge unlocked: ${label}!`, { duration: 5000 });
               });
             }
+          } else {
+            console.error('[Navbar] /api/streak error response:', JSON.stringify(body));
           }
-        } catch {}
+        } catch (err) {
+          console.error('[Navbar] /api/streak fetch failed:', err);
+        }
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_, session) => {
