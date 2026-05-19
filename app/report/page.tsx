@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import {
   Upload, MapPin, Loader2, AlertTriangle, CheckCircle, Camera, X, Search
 } from 'lucide-react';
+import { useTranslation } from '@/lib/useTranslation';
 
 interface NominatimResult {
   place_id: number;
@@ -62,6 +63,7 @@ export default function ReportPage() {
   const locContainerRef = useRef<HTMLDivElement>(null);
 
   const isThreat = THREAT_CATEGORIES.includes(category);
+  const { t } = useTranslation();
 
   // Clear AI result when switching to a threat category
   useEffect(() => {
@@ -251,14 +253,14 @@ export default function ReportPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Submit a Report</h1>
-      <p className="text-gray-500 text-sm mb-6">Report a species sighting or an environmental threat.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('report.title')}</h1>
+      <p className="text-gray-500 text-sm mb-6">{t('report.subtitle')}</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photo Upload */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Camera className="w-4 h-4" /> Photo
+            <Camera className="w-4 h-4" /> {t('report.photoSection')}
           </h2>
           {photoPreview ? (
             <div className="relative">
@@ -275,7 +277,7 @@ export default function ReportPage() {
               {identifying && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-lg">
                   <div className="text-white text-sm flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Identifying species…
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('report.identifyingText')}
                   </div>
                 </div>
               )}
@@ -287,9 +289,9 @@ export default function ReportPage() {
               className="w-full h-40 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-emerald-400 transition-colors text-gray-400 hover:text-emerald-600"
             >
               <Upload className="w-8 h-8" />
-              <span className="text-sm font-medium">Upload photo</span>
+              <span className="text-sm font-medium">{t('report.uploadPhoto')}</span>
               <span className="text-xs">
-                {isThreat ? 'Document the environmental threat' : 'AI will identify the species automatically'}
+                {isThreat ? t('report.threatHint') : t('report.aiHint')}
               </span>
             </button>
           )}
@@ -305,7 +307,7 @@ export default function ReportPage() {
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-emerald-600" />
-              <span className="font-semibold text-emerald-800 text-sm">AI Identification</span>
+              <span className="font-semibold text-emerald-800 text-sm">{t('report.aiIdentification')}</span>
               <span className="ml-auto text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
                 {aiResult.confidence}% confidence
               </span>
@@ -315,7 +317,7 @@ export default function ReportPage() {
             {aiResult.is_invasive && (
               <div className="flex items-center gap-1.5 text-red-700 text-xs mb-2">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span className="font-semibold">Invasive species detected</span>
+                <span className="font-semibold">{t('report.invasiveDetected')}</span>
               </div>
             )}
             <p className="text-xs text-gray-600">{aiResult.conservation_note}</p>
@@ -324,9 +326,9 @@ export default function ReportPage() {
 
         {/* Category */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <label className="block font-semibold text-gray-800 mb-3">Category</label>
+          <label className="block font-semibold text-gray-800 mb-3">{t('report.categoryLabel')}</label>
 
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Species Sighting</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('report.speciesSighting')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
             {SPECIES_CATS.map(({ value, label, icon, description }) => {
               const c = CATEGORY_COLORS[value];
@@ -346,7 +348,7 @@ export default function ReportPage() {
             })}
           </div>
 
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Environmental Threat</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('report.envThreat')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {THREAT_CATS.map(({ value, label, icon, description }) => {
               const c = CATEGORY_COLORS[value];
@@ -372,8 +374,7 @@ export default function ReportPage() {
           <div className={`${colors.bg} border ${colors.border} rounded-xl p-3 flex items-start gap-2`}>
             <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${colors.text}`} />
             <p className={`text-xs ${colors.text}`}>
-              <span className="font-bold">Threat report — </span>
-              this will trigger an automatic NGO alert. Please include as much detail as possible.
+              {t('report.threatNotice')}
             </p>
           </div>
         )}
@@ -382,7 +383,7 @@ export default function ReportPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
-              {isThreat ? 'Incident Title *' : 'Species Name *'}
+              {isThreat ? t('report.incidentTitle') : t('report.speciesName')}
             </label>
             <input
               type="text"
@@ -394,7 +395,7 @@ export default function ReportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('report.descriptionLabel')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -408,14 +409,14 @@ export default function ReportPage() {
         {/* Location */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <MapPin className="w-4 h-4" /> Location
+            <MapPin className="w-4 h-4" /> {t('report.locationLabel')}
           </h2>
           <button
             type="button" onClick={detectLocation} disabled={gpsLoading}
             className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-medium py-2 rounded-lg transition-colors disabled:opacity-60 mb-3"
           >
             {gpsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            {gpsLoading ? 'Detecting…' : 'Auto-detect GPS'}
+            {gpsLoading ? t('report.detectingLocation') : t('report.useMyLocation')}
           </button>
           {latitude && longitude && (
             <p className="text-xs text-emerald-600 font-medium mb-2 flex items-center gap-1">
@@ -479,7 +480,7 @@ export default function ReportPage() {
             isThreat ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-700 hover:bg-emerald-800'
           }`}
         >
-          {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit Report'}
+          {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('report.submitting')}</> : isThreat ? t('report.submitThreatBtn') : t('report.submitBtn')}
         </button>
       </form>
     </div>

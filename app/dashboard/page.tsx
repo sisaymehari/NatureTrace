@@ -9,6 +9,7 @@ import {
   CalendarDays, MapPin, Award, TrendingUp, TrendingDown, Minus,
   Download, Loader2,
 } from 'lucide-react';
+import { useTranslation } from '@/lib/useTranslation';
 
 const RANK_STYLE = [
   { color: 'text-yellow-500', bg: 'bg-yellow-50 border-yellow-200' },
@@ -52,22 +53,22 @@ interface Stats {
   categoryCounts:    Record<string, number>;
 }
 
-function Trend({ now, prev }: { now: number; prev: number }) {
+function Trend({ now, prev, vsLabel, sameLabel }: { now: number; prev: number; vsLabel: string; sameLabel: string }) {
   if (prev === 0 && now === 0) return null;
   const diff = now - prev;
   if (diff > 0) return (
     <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-600">
-      <TrendingUp className="w-3 h-3" />+{diff} vs last month
+      <TrendingUp className="w-3 h-3" />+{diff} {vsLabel}
     </span>
   );
   if (diff < 0) return (
     <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500">
-      <TrendingDown className="w-3 h-3" />{diff} vs last month
+      <TrendingDown className="w-3 h-3" />{diff} {vsLabel}
     </span>
   );
   return (
     <span className="flex items-center gap-0.5 text-xs text-gray-400">
-      <Minus className="w-3 h-3" />Same as last month
+      <Minus className="w-3 h-3" />{sameLabel}
     </span>
   );
 }
@@ -80,6 +81,7 @@ export default function DashboardPage() {
   const [stats, setStats]           = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [exporting, setExporting]   = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,7 +153,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Community Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
         <button
           onClick={handleExport}
           disabled={exporting}
@@ -160,12 +162,12 @@ export default function DashboardPage() {
           {exporting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Generating…
+              {t('dashboard.generating')}
             </>
           ) : (
             <>
               <Download className="w-4 h-4" />
-              Export Reports
+              {t('dashboard.exportBtn')}
             </>
           )}
         </button>
@@ -174,80 +176,80 @@ export default function DashboardPage() {
       {/* ── Impact stats ── */}
       <div className="mb-6">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          {monthName} Impact
+          {monthName} {t('dashboard.impactHeading')}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 
           {/* Reports this month */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">Reports This Month</span>
+              <span className="text-xs font-semibold text-gray-500">{t('dashboard.reportsThisMonth')}</span>
               <CalendarDays className="w-4 h-4 text-emerald-500" />
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">
               {statsLoading ? '…' : stats?.totalThisMonth ?? 0}
             </p>
-            {stats && <Trend now={stats.totalThisMonth} prev={stats.totalLastMonth} />}
+            {stats && <Trend now={stats.totalThisMonth} prev={stats.totalLastMonth} vsLabel={t('dashboard.trendVsLast')} sameLabel={t('dashboard.trendSame')} />}
           </div>
 
           {/* Unique species */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">Species Identified</span>
+              <span className="text-xs font-semibold text-gray-500">{t('dashboard.speciesCount')}</span>
               <TreePine className="w-4 h-4 text-green-500" />
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">
               {statsLoading ? '…' : stats?.uniqueSpecies ?? 0}
             </p>
-            <span className="text-xs text-gray-400">unique species (all time)</span>
+            <span className="text-xs text-gray-400">{t('dashboard.speciesSubtitle')}</span>
           </div>
 
           {/* Invasive flagged */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">Invasive Flagged</span>
+              <span className="text-xs font-semibold text-gray-500">{t('dashboard.invasiveFlagged')}</span>
               <AlertTriangle className="w-4 h-4 text-red-500" />
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">
               {statsLoading ? '…' : stats?.invasiveThisMonth ?? 0}
             </p>
-            {stats && <Trend now={stats.invasiveThisMonth} prev={stats.invasiveLastMonth} />}
+            {stats && <Trend now={stats.invasiveThisMonth} prev={stats.invasiveLastMonth} vsLabel={t('dashboard.trendVsLast')} sameLabel={t('dashboard.trendSame')} />}
           </div>
 
           {/* Threats reported */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">Threats Reported</span>
+              <span className="text-xs font-semibold text-gray-500">{t('dashboard.threatsReported')}</span>
               <BarChart3 className="w-4 h-4 text-orange-500" />
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">
               {statsLoading ? '…' : stats?.threatsThisMonth ?? 0}
             </p>
-            {stats && <Trend now={stats.threatsThisMonth} prev={stats.threatsLastMonth} />}
+            {stats && <Trend now={stats.threatsThisMonth} prev={stats.threatsLastMonth} vsLabel={t('dashboard.trendVsLast')} sameLabel={t('dashboard.trendSame')} />}
           </div>
 
           {/* Most active region */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">Most Active Region</span>
+              <span className="text-xs font-semibold text-gray-500">{t('dashboard.activeRegion')}</span>
               <MapPin className="w-4 h-4 text-blue-500" />
             </div>
             <p className="text-base font-bold text-gray-900 leading-tight mt-1 truncate">
               {statsLoading ? '…' : (stats?.mostActiveRegion ?? '—')}
             </p>
-            <span className="text-xs text-gray-400">by report volume</span>
+            <span className="text-xs text-gray-400">{t('dashboard.activeRegionSub')}</span>
           </div>
 
           {/* Most reported species */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">Top Species</span>
+              <span className="text-xs font-semibold text-gray-500">{t('dashboard.topSpecies')}</span>
               <Award className="w-4 h-4 text-yellow-500" />
             </div>
             <p className="text-base font-bold text-gray-900 leading-tight mt-1 truncate">
               {statsLoading ? '…' : (stats?.mostReportedSpecies ?? '—')}
             </p>
-            <span className="text-xs text-gray-400">most reported</span>
+            <span className="text-xs text-gray-400">{t('dashboard.topSpeciesSub')}</span>
           </div>
         </div>
       </div>
@@ -255,7 +257,7 @@ export default function DashboardPage() {
       {/* ── Bar chart ── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-          Reports by Category
+          {t('dashboard.chartHeading')}
         </h2>
         {statsLoading ? (
           <div className="space-y-3">
@@ -297,10 +299,10 @@ export default function DashboardPage() {
       {/* ── Community stats row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Reports',   value: reports.length,       icon: BarChart3,     color: 'text-emerald-600' },
-          { label: 'Species Sighted', value: new Set(speciesReports.map(r => r.species_name)).size, icon: TreePine, color: 'text-green-600' },
-          { label: 'Threats Filed',   value: threatReports.length, icon: AlertTriangle, color: 'text-orange-600' },
-          { label: 'Members',         value: memberCount,          icon: Users,         color: 'text-blue-600' },
+          { label: t('dashboard.totalReports'),   value: reports.length,       icon: BarChart3,     color: 'text-emerald-600' },
+          { label: t('dashboard.speciesSighted'), value: new Set(speciesReports.map(r => r.species_name)).size, icon: TreePine, color: 'text-green-600' },
+          { label: t('dashboard.threatsFiled'),   value: threatReports.length, icon: AlertTriangle, color: 'text-orange-600' },
+          { label: t('dashboard.members'),         value: memberCount,          icon: Users,         color: 'text-blue-600' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between">
@@ -321,7 +323,7 @@ export default function DashboardPage() {
       {/* ── Sightings + Leaderboard ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Recent Sightings</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('dashboard.recentSightings')}</h2>
           {loading ? (
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
@@ -330,7 +332,7 @@ export default function DashboardPage() {
             </div>
           ) : speciesReports.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
-              No sightings yet. <a href="/report" className="text-emerald-600 hover:underline">Be the first!</a>
+              {t('dashboard.noSightings')} <a href="/report" className="text-emerald-600 hover:underline">{t('dashboard.beFirst')}</a>
             </div>
           ) : (
             <div className="space-y-3">
@@ -343,7 +345,7 @@ export default function DashboardPage() {
 
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" /> Top Reporters
+            <Trophy className="w-5 h-5 text-yellow-500" /> {t('dashboard.topReporters')}
           </h2>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {loading ? (
@@ -353,7 +355,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : leaderboard.length === 0 ? (
-              <p className="p-6 text-center text-gray-400 text-sm">No members yet</p>
+              <p className="p-6 text-center text-gray-400 text-sm">{t('dashboard.noMembers')}</p>
             ) : (
               <ul className="divide-y divide-gray-50">
                 {leaderboard.map((user, idx) => {
@@ -403,7 +405,7 @@ export default function DashboardPage() {
       {/* ── Threat reports ── */}
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-orange-500" /> Environmental Threats
+          <AlertTriangle className="w-5 h-5 text-orange-500" /> {t('dashboard.envThreats')}
         </h2>
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -413,7 +415,7 @@ export default function DashboardPage() {
           </div>
         ) : threatReports.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 p-6 text-center text-gray-400">
-            No threats reported yet — <a href="/report" className="text-orange-600 hover:underline">report one now</a>.
+            {t('dashboard.noThreats')} <a href="/report" className="text-orange-600 hover:underline">{t('dashboard.reportOneNow')}</a>.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

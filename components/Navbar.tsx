@@ -5,8 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { Shield, Menu, X, Download } from 'lucide-react';
+import { Shield, Menu, X, Download, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from '@/lib/useTranslation';
+import type { Language } from '@/lib/translations';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -16,6 +18,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [installing, setInstalling] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const { t, lang, switchLanguage } = useTranslation();
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -79,10 +83,10 @@ export default function Navbar() {
   };
 
   const links = [
-    { href: '/', label: 'Map' },
-    { href: '/learn', label: 'Learn' },
-    { href: '/dashboard', label: 'Community' },
-    { href: '/report', label: 'Report' },
+    { href: '/', label: t('nav.map') },
+    { href: '/learn', label: t('nav.learn') },
+    { href: '/dashboard', label: t('nav.community') },
+    { href: '/report', label: t('nav.report') },
   ];
 
   const isActive = (href: string) =>
@@ -114,7 +118,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Auth */}
+          {/* Auth + Language */}
           <div className="hidden md:flex items-center gap-2">
             {installPrompt && (
               <button
@@ -124,22 +128,48 @@ export default function Navbar() {
                 title="Install BioGuard app"
               >
                 <Download className="w-4 h-4" />
-                Install
+                {t('nav.install')}
               </button>
             )}
+
+            {/* Language switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(!langOpen)}
+                className="flex items-center gap-1 text-sm text-emerald-100 hover:text-white px-2 py-2 rounded-md hover:bg-emerald-600 transition-colors"
+                title="Switch language"
+              >
+                <Globe className="w-4 h-4" />
+                {lang.toUpperCase()}
+              </button>
+              {langOpen && (
+                <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50 min-w-[130px]">
+                  {(['en', 'fr'] as Language[]).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => { switchLanguage(l); setLangOpen(false); }}
+                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === l ? 'font-bold text-emerald-700' : 'text-gray-700'}`}
+                    >
+                      {l === 'en' ? '🇬🇧 English' : '🇫🇷 Français'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {user ? (
               <>
                 <Link
                   href="/profile"
                   className="text-sm text-emerald-100 hover:text-white px-3 py-2 rounded-md hover:bg-emerald-600 transition-colors"
                 >
-                  Profile
+                  {t('nav.profile')}
                 </Link>
                 <button
                   onClick={signOut}
                   className="text-sm bg-emerald-900 hover:bg-emerald-950 px-4 py-2 rounded-md transition-colors"
                 >
-                  Sign Out
+                  {t('nav.signOut')}
                 </button>
               </>
             ) : (
@@ -148,13 +178,13 @@ export default function Navbar() {
                   href="/login"
                   className="text-sm text-emerald-100 hover:text-white px-3 py-2 rounded-md hover:bg-emerald-600 transition-colors"
                 >
-                  Login
+                  {t('nav.login')}
                 </Link>
                 <Link
                   href="/signup"
                   className="text-sm bg-white text-emerald-700 font-semibold px-4 py-2 rounded-md hover:bg-emerald-50 transition-colors"
                 >
-                  Sign Up
+                  {t('nav.signUp')}
                 </Link>
               </>
             )}
@@ -193,25 +223,37 @@ export default function Navbar() {
               className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm hover:bg-emerald-600 transition-colors disabled:opacity-60"
             >
               <Download className="w-4 h-4" />
-              Install App
+              {t('nav.installApp')}
             </button>
           )}
+          {/* Mobile language switcher */}
+          <div className="flex gap-2 px-3 py-2">
+            {(['en', 'fr'] as Language[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => { switchLanguage(l); setMenuOpen(false); }}
+                className={`text-sm px-3 py-1 rounded-full border transition-colors ${lang === l ? 'bg-white text-emerald-700 font-bold border-white' : 'text-emerald-100 border-emerald-500 hover:bg-emerald-600'}`}
+              >
+                {l === 'en' ? '🇬🇧 EN' : '🇫🇷 FR'}
+              </button>
+            ))}
+          </div>
           {user ? (
             <>
               <Link href="/profile" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
-                Profile
+                {t('nav.profile')}
               </Link>
               <button onClick={signOut} className="block w-full text-left px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
-                Sign Out
+                {t('nav.signOut')}
               </button>
             </>
           ) : (
             <>
               <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
-                Login
+                {t('nav.login')}
               </Link>
               <Link href="/signup" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-md text-sm hover:bg-emerald-600">
-                Sign Up
+                {t('nav.signUp')}
               </Link>
             </>
           )}

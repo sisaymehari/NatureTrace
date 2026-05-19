@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Search, AlertTriangle, Lightbulb } from 'lucide-react';
+import { useTranslation } from '@/lib/useTranslation';
 import type { Category } from '@/types';
 
 type AppCategory = Category;
@@ -287,18 +288,19 @@ const EMOJI_BG: Record<string, string> = {
 
 type FilterValue = AppCategory | 'all' | 'threats';
 
-const FILTERS: { label: string; value: FilterValue }[] = [
-  { label: 'All',      value: 'all' },
-  { label: 'Wildlife', value: 'wildlife' },
-  { label: 'Plants',   value: 'plant' },
-  { label: 'Marine',   value: 'marine' },
-  { label: 'Invasive', value: 'invasive' },
-  { label: '⚠️ Threats', value: 'threats' },
-];
-
 export default function LearnPage() {
   const [search, setSearch] = useState('');
   const [active, setActive] = useState<FilterValue>('all');
+  const { t } = useTranslation();
+
+  const FILTERS: { label: string; value: FilterValue }[] = [
+    { label: t('learn.all'),      value: 'all' },
+    { label: t('learn.wildlife'), value: 'wildlife' },
+    { label: t('learn.plants'),   value: 'plant' },
+    { label: t('learn.marine'),   value: 'marine' },
+    { label: t('learn.invasive'), value: 'invasive' },
+    { label: t('learn.threats'),  value: 'threats' },
+  ];
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -314,8 +316,8 @@ export default function LearnPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Learn &amp; Discover</h1>
-      <p className="text-gray-500 text-sm mb-6">24 entries — UK species, invasive threats, and environmental hazards to know and report.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('learn.title')}</h1>
+      <p className="text-gray-500 text-sm mb-6">{t('learn.subtitle')}</p>
 
       {/* Search */}
       <div className="relative mb-4">
@@ -324,7 +326,7 @@ export default function LearnPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or category…"
+          placeholder={t('learn.searchPlaceholder')}
           className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
       </div>
@@ -354,7 +356,7 @@ export default function LearnPage() {
           );
         })}
         <span className="ml-auto text-xs text-gray-400 self-center">
-          {filtered.length} {active === 'threats' ? 'threats' : 'species'}
+          {filtered.length} {active === 'threats' ? t('learn.countThreats') : t('learn.countSpecies')}
         </span>
       </div>
 
@@ -407,7 +409,7 @@ export default function LearnPage() {
                   <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Lightbulb className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                      <span className="text-xs font-bold text-emerald-700">If spotted</span>
+                      <span className="text-xs font-bold text-emerald-700">{t('learn.whatCanYouDo')}</span>
                     </div>
                     <p className="text-xs text-emerald-800 leading-relaxed">{s.tip}</p>
                   </div>

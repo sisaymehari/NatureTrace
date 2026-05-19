@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase';
 import type { User, Report } from '@/types';
 import { BADGES, CATEGORY_COLORS } from '@/types';
 import { Leaf, Star, FileText, Shield, CheckCircle, Loader, Clock, MapPin } from 'lucide-react';
+import { useTranslation } from '@/lib/useTranslation';
 
 // Point milestones for the eco-points progress bar
 const MILESTONES = [50, 100, 250, 500, 1000];
@@ -39,6 +40,7 @@ export default function ProfilePage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [streak, setStreak] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const load = async () => {
@@ -59,10 +61,12 @@ export default function ProfilePage() {
       setReports((userReports as Report[]) ?? []);
 
       if (streakRes.ok) {
-        const { streak: s } = await streakRes.json();
-        console.log('[Profile] streak from API:', s);
-        setStreak(s ?? profileData?.current_streak ?? 0);
+        const streakBody = await streakRes.json();
+        console.log('[Profile] full streak API response:', JSON.stringify(streakBody));
+        setStreak(streakBody.streak ?? profileData?.current_streak ?? 0);
       } else {
+        const errBody = await streakRes.text();
+        console.error('[Profile] streak API error', streakRes.status, errBody);
         setStreak(profileData?.current_streak ?? 0);
       }
 
@@ -108,12 +112,12 @@ export default function ProfilePage() {
               <h1 className="text-xl font-bold text-gray-900">{user.username ?? 'Citizen Scientist'}</h1>
               {email && <p className="text-sm text-gray-500 mt-0.5">{email}</p>}
               <p className="text-xs text-gray-400 mt-1">
-                Member since {new Date(user.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                {t('profile.memberSince')} {new Date(user.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
               </p>
             </div>
             {streak > 0 && (
               <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-700 font-bold text-sm px-3 py-1.5 rounded-full flex-shrink-0">
-                🔥 {streak} day streak
+                🔥 {streak} {t('profile.dayStreak')}
               </div>
             )}
           </div>
@@ -121,9 +125,9 @@ export default function ProfilePage() {
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-3 mt-5">
             {[
-              { icon: FileText,     label: 'Reports',  value: reports.length,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { icon: CheckCircle,  label: 'Verified', value: verifiedCount,   color: 'text-green-600',   bg: 'bg-green-50' },
-              { icon: Shield,       label: 'Badges',   value: earnedBadges.length, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+              { icon: FileText,     label: t('profile.reportsLabel'),  value: reports.length,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { icon: CheckCircle,  label: t('profile.verifiedLabel'), value: verifiedCount,   color: 'text-green-600',   bg: 'bg-green-50' },
+              { icon: Shield,       label: t('profile.badgesLabel'),   value: earnedBadges.length, color: 'text-yellow-600', bg: 'bg-yellow-50' },
             ].map(({ icon: Icon, label, value, color, bg }) => (
               <div key={label} className={`rounded-xl ${bg} p-3 text-center`}>
                 <Icon className={`w-5 h-5 mx-auto mb-1 ${color}`} />
@@ -133,18 +137,21 @@ export default function ProfilePage() {
             ))}
           </div>
 
+          {/* DEBUG — remove once streak is confirmed */}
+          <p className="mt-4 text-xs text-red-500 font-mono">DEBUG: streak={streak}</p>
+
           {/* Eco-points progress bar */}
           <div className="mt-5">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <Star className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-semibold text-gray-800">{points} eco points</span>
+                <span className="text-sm font-semibold text-gray-800">{points} {t('profile.ecoPoints')}</span>
               </div>
               {points < 1000 && (
-                <span className="text-xs text-gray-400">{next - points} pts to {nextLabel}</span>
+                <span className="text-xs text-gray-400">{next - points} {t('profile.ptsTo')} {nextLabel}</span>
               )}
               {points >= 1000 && (
-                <span className="text-xs text-emerald-600 font-semibold">Max rank reached!</span>
+                <span className="text-xs text-emerald-600 font-semibold">{t('profile.maxRank')}</span>
               )}
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
@@ -164,7 +171,7 @@ export default function ProfilePage() {
       {/* ── Badges grid ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <Star className="w-4 h-4 text-yellow-500" /> Badges
+          <Star className="w-4 h-4 text-yellow-500" /> {t('profile.badgesHeading')}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.entries(BADGES).map(([id, badge]) => {
@@ -189,7 +196,7 @@ export default function ProfilePage() {
                   {badge.label}
                 </p>
                 <p className={`text-xs mt-0.5 ${earned ? 'text-gray-500' : 'text-gray-300'}`}>
-                  {earned ? badge.description : '🔒 Locked'}
+                  {earned ? badge.description : t('profile.locked')}
                 </p>
               </div>
             );
@@ -200,17 +207,17 @@ export default function ProfilePage() {
       {/* ── My Reports ── */}
       <div>
         <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <Leaf className="w-4 h-4 text-emerald-600" /> My Reports ({reports.length})
+          <Leaf className="w-4 h-4 text-emerald-600" /> {t('profile.myReports')} ({reports.length})
         </h2>
 
         {reports.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
-            <p className="text-gray-400 mb-3">No reports yet</p>
+            <p className="text-gray-400 mb-3">{t('profile.noReports')}</p>
             <a
               href="/report"
               className="bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-800 transition-colors"
             >
-              Submit your first report
+              {t('profile.submitFirst')}
             </a>
           </div>
         ) : (
