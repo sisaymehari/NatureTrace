@@ -3,8 +3,6 @@ import { Resend } from 'resend';
 import { createServiceRoleClient } from '@/lib/supabase-server';
 import { getAlertContacts } from '@/lib/alert-contacts';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM = process.env.ALERT_FROM_EMAIL ?? 'BioGuard Alerts <onboarding@resend.dev>';
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
@@ -265,6 +263,8 @@ export async function POST(req: NextRequest) {
       console.warn('[/api/alerts] RESEND_API_KEY not set — email skipped. Subject would be:', subject);
       return NextResponse.json({ ok: true, email: 'skipped — no API key', subject });
     }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const results = await Promise.allSettled(
       contacts.map((contact) =>
