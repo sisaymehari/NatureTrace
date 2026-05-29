@@ -63,7 +63,7 @@ function buildEmail(report: any, alertType: string): { subject: string; html: st
     : null;
   const responder      = RESPONDERS[report.category];
 
-  const subject = `🚨 BioGuard Alert: ${categoryLabel} reported at ${locationText}`;
+  const subject = `🚨 NatureTrace Alert: ${categoryLabel} reported at ${locationText}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -80,7 +80,7 @@ function buildEmail(report: any, alertType: string): { subject: string; html: st
               <span style="font-size:22px;">🛡️</span>
             </td>
             <td style="padding-left:12px;">
-              <div style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">BioGuard</div>
+              <div style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">NatureTrace</div>
               <div style="color:#6EE7B7;font-size:12px;margin-top:2px;">Biodiversity Alert System</div>
             </td>
           </tr>
@@ -206,7 +206,7 @@ function buildEmail(report: any, alertType: string): { subject: string; html: st
             <td style="text-align:center;padding-bottom:24px;">
               <p style="margin:0;font-size:12px;color:#9CA3AF;">
                 This alert was generated automatically by
-                <a href="${APP_URL}" style="color:#1D6A48;text-decoration:none;font-weight:600;">BioGuard</a>
+                <a href="${APP_URL}" style="color:#1D6A48;text-decoration:none;font-weight:600;">NatureTrace</a>
                 · UK Biodiversity Reporting Platform
               </p>
               <p style="margin:6px 0 0;font-size:11px;color:#D1D5DB;">

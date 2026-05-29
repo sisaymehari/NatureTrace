@@ -32,7 +32,7 @@ const SPECIES: Species[] = [
     scientific: 'Vulpes vulpes',
     category: 'wildlife',
     description: "Britain's most widespread wild carnivore, the red fox thrives in both rural and urban environments thanks to its highly adaptable diet and behaviour. Largely nocturnal, foxes are most often seen at dusk and dawn hunting rabbits, voles, and invertebrates.",
-    tip: "Log your sighting with time and location on BioGuard. Avoid leaving food out in gardens, as this can encourage unhealthy dependency on humans.",
+    tip: "Log your sighting with time and location on NatureTrace. Avoid leaving food out in gardens, as this can encourage unhealthy dependency on humans.",
   },
   {
     id: 'hedgehog',
@@ -42,7 +42,7 @@ const SPECIES: Species[] = [
     category: 'wildlife',
     status: { label: 'Declining', color: 'bg-amber-100 text-amber-800 border-amber-300' },
     description: "Hedgehog populations have declined by a third since 2000, making every sighting significant. They hibernate from November to March and rely on connected wildlife corridors to forage safely at night.",
-    tip: "Cut a 13 cm hole in your garden fence to let hedgehogs roam freely. Report each sighting on BioGuard — distribution data directly supports recovery projects.",
+    tip: "Cut a 13 cm hole in your garden fence to let hedgehogs roam freely. Report each sighting on NatureTrace — distribution data directly supports recovery projects.",
   },
   {
     id: 'red-squirrel',
@@ -52,7 +52,7 @@ const SPECIES: Species[] = [
     category: 'wildlife',
     status: { label: 'Endangered', color: 'bg-red-100 text-red-800 border-red-300' },
     description: "Britain's only native squirrel is now restricted to Scotland, Northumberland, and a few islands, squeezed out by the introduced grey squirrel and squirrelpox virus. Smaller than grey squirrels, reds have distinctive ear tufts in winter.",
-    tip: "Report any sighting immediately on BioGuard — real-time data helps conservation teams protect habitat corridors and manage grey squirrel populations.",
+    tip: "Report any sighting immediately on NatureTrace — real-time data helps conservation teams protect habitat corridors and manage grey squirrel populations.",
   },
   {
     id: 'barn-owl',
@@ -62,7 +62,7 @@ const SPECIES: Species[] = [
     category: 'wildlife',
     status: { label: 'Amber Listed', color: 'bg-amber-100 text-amber-800 border-amber-300' },
     description: "The barn owl's heart-shaped face and ghostly white plumage make it one of Britain's most recognisable birds. They hunt in near-silence using exceptional hearing to pinpoint voles and mice in complete darkness.",
-    tip: "If you find a grounded barn owl, contact the RSPCA immediately. Log your sighting on BioGuard — winter records are especially important when food is scarce.",
+    tip: "If you find a grounded barn owl, contact the RSPCA immediately. Log your sighting on NatureTrace — winter records are especially important when food is scarce.",
   },
   {
     id: 'otter',
@@ -84,7 +84,7 @@ const SPECIES: Species[] = [
     category: 'plant',
     status: { label: 'Protected', color: 'bg-purple-100 text-purple-800 border-purple-300' },
     description: "England holds around half the world's population of native bluebells, which form spectacular violet-blue carpets in ancient woodland each April and May. Unlike the invasive Spanish bluebell, native plants have drooping one-sided spikes and a sweet honey scent.",
-    tip: "Stay on paths in bluebell woods to avoid crushing bulbs. It is illegal to dig up wild bluebells — report any harvesting or picking on BioGuard.",
+    tip: "Stay on paths in bluebell woods to avoid crushing bulbs. It is illegal to dig up wild bluebells — report any harvesting or picking on NatureTrace.",
   },
   {
     id: 'bee-orchid',
@@ -93,7 +93,7 @@ const SPECIES: Species[] = [
     scientific: 'Ophrys apifera',
     category: 'plant',
     description: "One of Britain's most extraordinary wildflowers, the bee orchid's flower mimics a female bumblebee with extraordinary accuracy to lure male pollinators. It colonises chalk and limestone grassland, road verges, and old quarries where competition is low.",
-    tip: "Note the exact grid reference when you find one and log it on BioGuard. Avoid disturbing surrounding soil — orchid seeds need undisturbed, low-nutrient ground to germinate.",
+    tip: "Note the exact grid reference when you find one and log it on NatureTrace. Avoid disturbing surrounding soil — orchid seeds need undisturbed, low-nutrient ground to germinate.",
   },
   {
     id: 'sundew',
@@ -103,7 +103,7 @@ const SPECIES: Species[] = [
     category: 'plant',
     status: { label: 'Protected', color: 'bg-purple-100 text-purple-800 border-purple-300' },
     description: "Britain's most common carnivorous plant, the round-leaved sundew traps insects on glistening sticky tentacles to supplement the poor nutrients of bogs and heathlands. Its small white flowers appear from June to August.",
-    tip: "Never pick or uproot this legally protected plant. Record sightings on BioGuard — sundew populations are sensitive early-warning indicators of bog habitat health.",
+    tip: "Never pick or uproot this legally protected plant. Record sightings on NatureTrace — sundew populations are sensitive early-warning indicators of bog habitat health.",
   },
   {
     id: 'wild-garlic',
@@ -112,7 +112,7 @@ const SPECIES: Species[] = [
     scientific: 'Allium ursinum',
     category: 'plant',
     description: "Also called ramsons, wild garlic creates stunning white-flowered carpets in damp ancient woodland from March to May, filling the air with a strong garlic scent. The broad leaves are edible but can be confused with toxic lily of the valley — always smell before eating.",
-    tip: "Only forage with absolute confidence in identification and never take more than a small amount from any patch. Log large colonies on BioGuard to help map ancient woodland health.",
+    tip: "Only forage with absolute confidence in identification and never take more than a small amount from any patch. Log large colonies on NatureTrace to help map ancient woodland health.",
   },
   {
     id: 'foxglove',
@@ -121,7 +121,7 @@ const SPECIES: Species[] = [
     scientific: 'Digitalis purpurea',
     category: 'plant',
     description: "A tall native biennial with spires of tubular purple-pink flowers, foxgloves thrive in woodland clearings, heathland, and hedgerows across Britain. All parts of the plant are poisonous, yet it is a vital nectar source for bumblebees and the specialist foxglove bee.",
-    tip: "Keep children and pets away from all plant parts, which are toxic if ingested. Record sightings on BioGuard to help map pollinator-friendly habitats across the UK.",
+    tip: "Keep children and pets away from all plant parts, which are toxic if ingested. Record sightings on NatureTrace to help map pollinator-friendly habitats across the UK.",
   },
 
   // ── Marine ─────────────────────────────────────────────────────────────────
@@ -143,7 +143,7 @@ const SPECIES: Species[] = [
     category: 'marine',
     status: { label: 'Protected', color: 'bg-purple-100 text-purple-800 border-purple-300' },
     description: "Cardigan Bay and the Moray Firth are home to two of the few resident bottlenose dolphin populations in UK waters. These highly intelligent animals live in complex social groups and may live for over 50 years.",
-    tip: "Keep vessels at least 100 m away and never approach or feed wild dolphins. Log sightings on BioGuard and the Sea Watch Foundation to contribute to long-term population monitoring.",
+    tip: "Keep vessels at least 100 m away and never approach or feed wild dolphins. Log sightings on NatureTrace and the Sea Watch Foundation to contribute to long-term population monitoring.",
   },
   {
     id: 'basking-shark',
@@ -153,7 +153,7 @@ const SPECIES: Species[] = [
     category: 'marine',
     status: { label: 'Vulnerable', color: 'bg-orange-100 text-orange-800 border-orange-300' },
     description: "The world's second largest fish visits British waters each summer to filter-feed on zooplankton near the surface. Despite reaching 12 m in length, basking sharks are completely harmless and have been fully protected in UK waters since 1998.",
-    tip: "Keep a 100 m distance by boat and never enter the water near one. Report every sighting on BioGuard and the Shark Trust — location data is vital for protecting feeding hotspots.",
+    tip: "Keep a 100 m distance by boat and never enter the water near one. Report every sighting on NatureTrace and the Shark Trust — location data is vital for protecting feeding hotspots.",
   },
   {
     id: 'puffin',
@@ -163,7 +163,7 @@ const SPECIES: Species[] = [
     category: 'marine',
     status: { label: 'Vulnerable', color: 'bg-orange-100 text-orange-800 border-orange-300' },
     description: "Britain holds around 10% of the world's Atlantic puffins, with major colonies on the Farne Islands, Skomer, and Handa Island. Remarkable divers, puffins can carry up to 10 fish crosswise in their distinctive striped bills.",
-    tip: "Visit colonies from designated viewing areas only and keep noise to a minimum. Report sightings on BioGuard, especially if you observe distressed or oiled birds.",
+    tip: "Visit colonies from designated viewing areas only and keep noise to a minimum. Report sightings on NatureTrace, especially if you observe distressed or oiled birds.",
   },
   {
     id: 'seahorse',
@@ -173,7 +173,7 @@ const SPECIES: Species[] = [
     category: 'marine',
     status: { label: 'Protected', color: 'bg-purple-100 text-purple-800 border-purple-300' },
     description: "One of just two seahorse species in UK waters, this delicate fish inhabits seagrass beds and shallow estuaries around southern England and Wales. Uniquely, males carry and give birth to the young from a specialised brood pouch.",
-    tip: "Never handle seahorses or disturb seagrass beds. Report every sighting to the Seahorse Trust and BioGuard — each record is critical for understanding their sparse UK distribution.",
+    tip: "Never handle seahorses or disturb seagrass beds. Report every sighting to the Seahorse Trust and NatureTrace — each record is critical for understanding their sparse UK distribution.",
   },
 
   // ── Invasive ────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ const SPECIES: Species[] = [
     scientific: 'Reynoutria japonica',
     category: 'invasive',
     description: "One of the world's worst invasive plants, Japanese knotweed can penetrate concrete foundations and tarmac, and costs £165 million annually to manage in the UK. Its hollow bamboo-like stems grow up to 3 m tall and can regrow from root fragments as small as 1 cm.",
-    tip: "Never cut, strim, or move any material — spreading it is a criminal offence if it reaches controlled waters. Report immediately on BioGuard so a licensed specialist can advise on eradication.",
+    tip: "Never cut, strim, or move any material — spreading it is a criminal offence if it reaches controlled waters. Report immediately on NatureTrace so a licensed specialist can advise on eradication.",
   },
   {
     id: 'grey-squirrel',
@@ -193,7 +193,7 @@ const SPECIES: Species[] = [
     scientific: 'Sciurus carolinensis',
     category: 'invasive',
     description: "Introduced from North America in 1876, grey squirrels carry squirrelpox virus — lethal to red squirrels — and strip bark from trees causing significant timber losses across Britain. They have displaced red squirrels from most of England and Wales.",
-    tip: "Do not feed grey squirrels, especially near red squirrel strongholds in the north. Report sightings on BioGuard and support local red squirrel conservation organisations.",
+    tip: "Do not feed grey squirrels, especially near red squirrel strongholds in the north. Report sightings on NatureTrace and support local red squirrel conservation organisations.",
   },
   {
     id: 'signal-crayfish',
@@ -202,7 +202,7 @@ const SPECIES: Species[] = [
     scientific: 'Pacifastacus leniusculus',
     category: 'invasive',
     description: "Introduced from North America, signal crayfish carry crayfish plague and have driven the native white-clawed crayfish to the edge of extinction in England. They burrow extensively into riverbanks, causing serious erosion and destabilising watercourses.",
-    tip: "Always 'Check, Clean, Dry' all gear between waterways. Report sightings on BioGuard and never move any crayfish, water, or damp equipment between rivers or lakes.",
+    tip: "Always 'Check, Clean, Dry' all gear between waterways. Report sightings on NatureTrace and never move any crayfish, water, or damp equipment between rivers or lakes.",
   },
   {
     id: 'himalayan-balsam',
@@ -211,7 +211,7 @@ const SPECIES: Species[] = [
     scientific: 'Impatiens glandulifera',
     category: 'invasive',
     description: "Introduced as a garden ornamental in 1839, this tall annual now dominates riverbanks across Britain, producing up to 800 seeds per plant that explode up to 7 m from the parent. It dies back each winter, leaving bare banks highly vulnerable to erosion.",
-    tip: "Pull plants before they set seed — roots come out easily in damp soil. Report large stands on BioGuard and join organised balsam-bashing volunteer events in summer.",
+    tip: "Pull plants before they set seed — roots come out easily in damp soil. Report large stands on NatureTrace and join organised balsam-bashing volunteer events in summer.",
   },
   {
     id: 'rhododendron',
@@ -220,7 +220,7 @@ const SPECIES: Species[] = [
     scientific: 'Rhododendron ponticum',
     category: 'invasive',
     description: "Originally planted as game cover, this evergreen shrub now forms impenetrable, light-excluding thickets across upland woodland and heathland, eliminating all native ground flora beneath it. It is also a reservoir for Phytophthora ramorum, the pathogen behind sudden oak death.",
-    tip: "Report large stands on BioGuard, especially near ancient woodland or upland heathland. Do not plant R. ponticum in gardens — many ornamental cultivars are non-invasive alternatives.",
+    tip: "Report large stands on NatureTrace, especially near ancient woodland or upland heathland. Do not plant R. ponticum in gardens — many ornamental cultivars are non-invasive alternatives.",
   },
 
   // ── Environmental Threats ──────────────────────────────────────────────────
@@ -231,7 +231,7 @@ const SPECIES: Species[] = [
     scientific: 'Environmental Threat',
     category: 'habitat_destruction',
     description: "Habitat destruction is the primary driver of biodiversity loss in the UK, caused by urban development, agricultural intensification, drainage of wetlands, and clearance of hedgerows and ancient woodland. Once a habitat is gone it may take centuries to recover, or may never return at all.",
-    tip: "If you witness unlawful clearance of vegetation, woodland, or wetland, photograph it and report it to your local planning authority and Natural England. Log it on BioGuard with GPS coordinates.",
+    tip: "If you witness unlawful clearance of vegetation, woodland, or wetland, photograph it and report it to your local planning authority and Natural England. Log it on NatureTrace with GPS coordinates.",
   },
   {
     id: 'illegal-dumping',
@@ -240,7 +240,7 @@ const SPECIES: Species[] = [
     scientific: 'Environmental Threat',
     category: 'illegal_dumping',
     description: "Fly-tipping — the illegal disposal of waste on land — costs local authorities over £50 million a year to clear in England alone. Dumped waste leaches toxins into soil and waterways, kills vegetation, and provides breeding grounds for rats and other pest species.",
-    tip: "Never move or disturb dumped material — it may contain hazardous substances. Report fly-tipping to your local council or use the BioGuard app with photos and coordinates. It is a criminal offence carrying fines up to £50,000.",
+    tip: "Never move or disturb dumped material — it may contain hazardous substances. Report fly-tipping to your local council or use the NatureTrace app with photos and coordinates. It is a criminal offence carrying fines up to £50,000.",
   },
   {
     id: 'pollution',
@@ -249,7 +249,7 @@ const SPECIES: Species[] = [
     scientific: 'Environmental Threat',
     category: 'pollution',
     description: "Water, soil, and air pollution affect virtually every UK habitat — from agricultural run-off choking rivers with nitrates and phosphates, to plastic microparticles infiltrating marine food chains. Pollution is a leading cause of fish kills, harmful algal blooms, and the collapse of invertebrate populations.",
-    tip: "Report discoloured water, dead fish, or unusual foam or smells in rivers immediately to the Environment Agency (0800 807060). Photograph the source if safe to do so and log the location on BioGuard.",
+    tip: "Report discoloured water, dead fish, or unusual foam or smells in rivers immediately to the Environment Agency (0800 807060). Photograph the source if safe to do so and log the location on NatureTrace.",
   },
   {
     id: 'environmental-emergency',
@@ -258,7 +258,7 @@ const SPECIES: Species[] = [
     scientific: 'Environmental Threat',
     category: 'environmental_emergency',
     description: "Environmental emergencies — including wildfires, chemical spills, oil slicks, and severe flooding — can devastate habitats and wildlife populations in hours. Climate change is making such events more frequent and severe across the UK, particularly large heath and moorland fires in dry summers.",
-    tip: "Call 999 immediately for active fires or dangerous chemical spills. Once safe, report the incident on BioGuard and the Environment Agency hotline (0800 807060) with photos, location, and estimated scale.",
+    tip: "Call 999 immediately for active fires or dangerous chemical spills. Once safe, report the incident on NatureTrace and the Environment Agency hotline (0800 807060) with photos, location, and estimated scale.",
   },
 ];
 

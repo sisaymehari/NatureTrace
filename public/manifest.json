@@ -1,6 +1,6 @@
 {
-  "name": "BioGuard",
-  "short_name": "BioGuard",
+  "name": "NatureTrace",
+  "short_name": "NatureTrace",
   "description": "Citizen science biodiversity reporting for UK wildlife",
   "start_url": "/",
   "display": "standalone",

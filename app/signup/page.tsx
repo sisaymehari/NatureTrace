@@ -58,7 +58,7 @@ export default function SignupPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-emerald-100 rounded-full mb-4">
             <Shield className="w-7 h-7 text-emerald-700" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Join BioGuard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Join NatureTrace</h1>
           <p className="text-gray-500 mt-1">Start protecting UK biodiversity</p>
         </div>
 

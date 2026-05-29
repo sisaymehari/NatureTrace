@@ -6,13 +6,13 @@ import OnboardingOverlay from "@/components/OnboardingOverlay";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const metadata: Metadata = {
-  title: "BioGuard — Biodiversity Reporting",
+  title: "NatureTrace — Biodiversity Reporting",
   description: "Citizen science biodiversity reporting for UK wildlife",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "BioGuard",
+    title: "NatureTrace",
   },
   icons: {
     apple: "/icons/icon.svg",

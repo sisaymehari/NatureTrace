@@ -98,7 +98,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             <Shield className="w-6 h-6" />
-            BioGuard
+            NatureTrace
           </Link>
 
           {/* Desktop links */}
@@ -125,7 +125,7 @@ export default function Navbar() {
                 onClick={handleInstall}
                 disabled={installing}
                 className="flex items-center gap-1.5 text-sm bg-emerald-600 hover:bg-emerald-500 px-3 py-2 rounded-md transition-colors disabled:opacity-60"
-                title="Install BioGuard app"
+                title="Install NatureTrace app"
               >
                 <Download className="w-4 h-4" />
                 {t('nav.install')}

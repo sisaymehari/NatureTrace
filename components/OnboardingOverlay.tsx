@@ -91,12 +91,12 @@ export default function OnboardingOverlay() {
           <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/40 ring-4 ring-emerald-400/20">
             <TreePine className="w-8 h-8 text-white" />
           </div>
-          <span className="text-4xl font-bold text-white tracking-tight">BioGuard</span>
+          <span className="text-4xl font-bold text-white tracking-tight">NatureTrace</span>
         </div>
 
         {/* Tagline */}
         <p className="text-emerald-300 text-lg font-medium mb-10 tracking-wide">
-          Protecting biodiversity, together
+          Every tree. Every threat. Every citizen.
         </p>
 
         {/* Step cards */}
