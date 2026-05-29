@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Report, Category } from '@/types';
 import { CATEGORY_COLORS } from '@/types';
 import { createClient } from '@/lib/supabase';
-import { Search, X, LocateFixed } from 'lucide-react';
+import { Search, X, LocateFixed, TreePine, AlertTriangle } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+const MIN_TREE_ZOOM = 14;
 
 // Inline CSS colours for popup badges (Tailwind classes are dead inside Leaflet HTML strings)
 const POPUP_BADGE: Record<string, { bg: string; color: string; border: string }> = {
@@ -46,8 +49,19 @@ export default function Map({ initialReports, activeCategory }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any>(null);
+  const LRef = useRef<any>(null);
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [locating, setLocating] = useState(false);
+
+  // Map mode
+  const [mapMode, setMapMode] = useState<'threats' | 'trees'>('threats');
+  const mapModeRef = useRef<'threats' | 'trees'>('threats');
+  const [treesLoading, setTreesLoading] = useState(false);
+  const [treeStatusMsg, setTreeStatusMsg] = useState<string | null>(null);
+  const [currentZoom, setCurrentZoom] = useState(6);
+  const treeLayerRef = useRef<any>(null);
+  const treeCacheRef = useRef<Record<string, any[]>>({});
+  const treeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,6 +70,19 @@ export default function Map({ initialReports, activeCategory }: Props) {
   const [showResults, setShowResults] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Global handler for "Verify this tree" button inside Leaflet popup HTML
+  useEffect(() => {
+    (window as any).__nt_verifyTree = () => {
+      toast.success('Thank you for verifying!');
+    };
+    return () => { delete (window as any).__nt_verifyTree; };
+  }, []);
+
+  // Keep mapModeRef in sync — must run before the mode-switch effect
+  useEffect(() => {
+    mapModeRef.current = mapMode;
+  }, [mapMode]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -72,7 +99,7 @@ export default function Map({ initialReports, activeCategory }: Props) {
       const map = L.map(mapRef.current, {
         center: [54.5, -3.5],
         zoom: 6,
-        zoomControl: false,       // we'll add it at bottom-right
+        zoomControl: false,
         dragging: true,
         scrollWheelZoom: true,
         touchZoom: true,
@@ -87,24 +114,159 @@ export default function Map({ initialReports, activeCategory }: Props) {
         maxZoom: 19,
       }).addTo(map);
 
+      LRef.current = L;
       mapInstanceRef.current = map;
       renderMarkers(L, map);
+
+      map.on('moveend', () => {
+        const zoom = map.getZoom();
+
+        if (mapModeRef.current === 'trees') {
+          setCurrentZoom(zoom);
+
+          if (zoom < MIN_TREE_ZOOM) {
+            // Hide trees and cancel any pending fetch when zoomed out
+            if (treeLayerRef.current) map.removeLayer(treeLayerRef.current);
+            if (treeDebounceRef.current) clearTimeout(treeDebounceRef.current);
+            setTreeStatusMsg(null);
+            return;
+          }
+
+          if (treeDebounceRef.current) clearTimeout(treeDebounceRef.current);
+          treeDebounceRef.current = setTimeout(() => {
+            fetchAndRenderTrees(L, map);
+          }, 800);
+        }
+      });
     };
 
     init();
 
     return () => {
+      if (treeDebounceRef.current) clearTimeout(treeDebounceRef.current);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        LRef.current = null;
       }
     };
   }, []);
 
-  const renderMarkers = async (L: any, map: any) => {
-    if (markersRef.current) {
-      map.removeLayer(markersRef.current);
+  const fetchAndRenderTrees = async (L: any, map: any) => {
+    const zoom = map.getZoom();
+    if (zoom < MIN_TREE_ZOOM) return;
+
+    // Use actual viewport bounds
+    const bounds = map.getBounds();
+    const south = bounds.getSouth().toFixed(6);
+    const north = bounds.getNorth().toFixed(6);
+    const west  = bounds.getWest().toFixed(6);
+    const east  = bounds.getEast().toFixed(6);
+
+    const bboxKey = `${south},${west},${north},${east}`;
+
+    if (treeCacheRef.current[bboxKey]) {
+      const cached = treeCacheRef.current[bboxKey];
+      renderTreeLayer(L, map, cached);
+      setTreeStatusMsg(`${cached.length} tree${cached.length === 1 ? '' : 's'} found`);
+      return;
     }
+
+    setTreesLoading(true);
+    setTreeStatusMsg('Loading trees from OpenStreetMap…');
+    try {
+      const query =
+        `[out:json][timeout:30];` +
+        `node["natural"="tree"](${south},${west},${north},${east});` +
+        `out 500;`;
+
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: query,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const nodes: any[] = data.elements ?? [];
+      treeCacheRef.current[bboxKey] = nodes;
+      if (mapModeRef.current === 'trees') {
+        renderTreeLayer(L, map, nodes);
+        setTreeStatusMsg(`${nodes.length} tree${nodes.length === 1 ? '' : 's'} found`);
+      }
+    } catch (err) {
+      console.error('[Trees] Overpass fetch failed:', err);
+      toast.error('Could not load tree data — try again shortly.');
+      setTreeStatusMsg(null);
+    } finally {
+      setTreesLoading(false);
+    }
+  };
+
+  const renderTreeLayer = (L: any, map: any, nodes: any[]) => {
+    if (treeLayerRef.current) map.removeLayer(treeLayerRef.current);
+    const group = L.layerGroup();
+
+    nodes.forEach((node: any) => {
+      const { lat, lon, tags = {} } = node;
+      const species: string | null =
+        tags['species:en'] || tags['species'] || tags['name'] || null;
+
+      const circle = L.circleMarker([lat, lon], {
+        radius: 6,
+        fillColor: '#2D9E4F',
+        color: '#2D9E4F',
+        weight: 1,
+        opacity: 0.7,
+        fillOpacity: 0.7,
+      });
+
+      const speciesRow = species
+        ? `<p style="margin:0 0 3px;font-size:14px;font-weight:700;color:#111827;line-height:1.3">${species}</p>`
+        : `<p style="margin:0 0 3px;font-size:13px;color:#9CA3AF;font-style:italic">Common tree</p>`;
+
+      circle.bindPopup(
+        `<div style="font-family:system-ui,Arial,sans-serif;width:210px;padding:4px 2px">
+          <div style="font-size:30px;text-align:center;margin-bottom:8px;line-height:1">🌳</div>
+          ${speciesRow}
+          <p style="margin:0 0 10px;font-size:11px;color:#9CA3AF">
+            ${parseFloat(lat).toFixed(5)}, ${parseFloat(lon).toFixed(5)}
+          </p>
+          <button
+            onclick="window.__nt_verifyTree()"
+            style="width:100%;background:#1D6A48;color:white;border:none;border-radius:8px;padding:7px 0;font-size:12px;font-weight:600;cursor:pointer"
+            onmouseover="this.style.background='#155740'"
+            onmouseout="this.style.background='#1D6A48'"
+          >Verify this tree</button>
+        </div>`,
+        { maxWidth: 240 }
+      );
+
+      group.addLayer(circle);
+    });
+
+    group.addTo(map);
+    treeLayerRef.current = group;
+  };
+
+  // React to mode toggle
+  useEffect(() => {
+    if (!mapInstanceRef.current || !LRef.current) return;
+    const L = LRef.current;
+    const map = mapInstanceRef.current;
+
+    if (mapMode === 'trees') {
+      const zoom = map.getZoom();
+      setCurrentZoom(zoom);
+      if (markersRef.current) map.removeLayer(markersRef.current);
+      fetchAndRenderTrees(L, map);
+    } else {
+      if (treeLayerRef.current) map.removeLayer(treeLayerRef.current);
+      setTreeStatusMsg(null);
+      renderMarkers(L, map);
+    }
+  }, [mapMode]);
+
+  const renderMarkers = async (L: any, map: any) => {
+    if (markersRef.current) map.removeLayer(markersRef.current);
 
     const cluster = (L as any).markerClusterGroup({ maxClusterRadius: 60 });
 
@@ -125,17 +287,17 @@ export default function Map({ initialReports, activeCategory }: Props) {
         popupAnchor: [0, -10],
       });
 
-      const popup = L.popup({ maxWidth: 280 }).setContent(
-        createPopupHTML(report)
-      );
-
+      const popup = L.popup({ maxWidth: 280 }).setContent(createPopupHTML(report));
       const marker = L.marker([report.latitude, report.longitude], { icon });
       marker.bindPopup(popup);
       cluster.addLayer(marker);
     });
 
-    map.addLayer(cluster);
     markersRef.current = cluster;
+    // Only add to map when in threats mode
+    if (mapModeRef.current !== 'trees') {
+      map.addLayer(cluster);
+    }
   };
 
   const createPopupHTML = (report: Report) => {
@@ -164,7 +326,7 @@ export default function Map({ initialReports, activeCategory }: Props) {
     `;
   };
 
-  // Re-render markers when filter changes
+  // Re-render markers when filter or live reports change
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     import('leaflet').then(({ default: L }) => {
@@ -263,7 +425,7 @@ export default function Map({ initialReports, activeCategory }: Props) {
     );
   };
 
-  // Close dropdown when clicking outside the search box
+  // Close search dropdown when clicking outside
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
@@ -274,11 +436,69 @@ export default function Map({ initialReports, activeCategory }: Props) {
     return () => document.removeEventListener('mousedown', onMouseDown);
   }, []);
 
+  // Derive tree status bar content
+  const treeStatusBar = (() => {
+    if (mapMode !== 'trees') return null;
+    if (currentZoom < MIN_TREE_ZOOM) {
+      return { icon: '🔍', text: 'Zoom in to see individual trees', color: 'text-gray-500' };
+    }
+    if (treesLoading) {
+      return { icon: null, text: 'Loading trees from OpenStreetMap…', color: 'text-gray-500', spinner: true };
+    }
+    if (treeStatusMsg) {
+      return { icon: '🌳', text: treeStatusMsg, color: 'text-emerald-700' };
+    }
+    return null;
+  })();
+
   return (
     <div className="relative w-full h-full min-h-[500px]">
       <div ref={mapRef} className="w-full h-full" />
 
-      {/* Location search overlay */}
+      {/* Mode toggle — top-right */}
+      <div className="absolute top-3 right-3 z-[1000] flex rounded-xl overflow-hidden shadow-md border border-gray-200 bg-white">
+        <button
+          onClick={() => setMapMode('threats')}
+          className={`px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+            mapMode === 'threats'
+              ? 'bg-emerald-700 text-white'
+              : 'text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Report Threat
+        </button>
+        <div className="w-px bg-gray-200" />
+        <button
+          onClick={() => setMapMode('trees')}
+          className={`px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+            mapMode === 'trees'
+              ? 'bg-emerald-700 text-white'
+              : 'text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <TreePine className="w-3.5 h-3.5" />
+          Explore Trees
+          {treesLoading && (
+            <span className="block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          )}
+        </button>
+      </div>
+
+      {/* Tree status bar — appears below the toggle in trees mode */}
+      {treeStatusBar && (
+        <div className="absolute top-14 right-3 z-[1000]">
+          <div className={`bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-md border border-gray-200 text-xs font-medium flex items-center gap-1.5 ${treeStatusBar.color}`}>
+            {treeStatusBar.spinner && (
+              <span className="block w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin flex-shrink-0" />
+            )}
+            {treeStatusBar.icon && <span>{treeStatusBar.icon}</span>}
+            {treeStatusBar.text}
+          </div>
+        </div>
+      )}
+
+      {/* Location search overlay — top-center */}
       <div
         ref={searchContainerRef}
         className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-sm px-3"

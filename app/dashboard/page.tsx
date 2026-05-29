@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ReportCard from '@/components/ReportCard';
+import TreeScoreCard from '@/components/TreeScoreCard';
 import type { Report, User } from '@/types';
 import { BADGES, CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
 import {
@@ -81,6 +82,7 @@ export default function DashboardPage() {
   const [stats, setStats]           = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [exporting, setExporting]   = useState(false);
+  const [treeRating, setTreeRating] = useState<string | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -296,13 +298,16 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* ── 3-30-300 Score ── */}
+      <TreeScoreCard onResult={(r) => setTreeRating(r)} />
+
       {/* ── Community stats row ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {[
-          { label: t('dashboard.totalReports'),   value: reports.length,       icon: BarChart3,     color: 'text-emerald-600' },
-          { label: t('dashboard.speciesSighted'), value: new Set(speciesReports.map(r => r.species_name)).size, icon: TreePine, color: 'text-green-600' },
-          { label: t('dashboard.threatsFiled'),   value: threatReports.length, icon: AlertTriangle, color: 'text-orange-600' },
-          { label: t('dashboard.members'),         value: memberCount,          icon: Users,         color: 'text-blue-600' },
+          { label: t('dashboard.totalReports'),   value: String(reports.length),       icon: BarChart3,     color: 'text-emerald-600' },
+          { label: t('dashboard.speciesSighted'), value: String(new Set(speciesReports.map(r => r.species_name)).size), icon: TreePine, color: 'text-green-600' },
+          { label: t('dashboard.threatsFiled'),   value: String(threatReports.length), icon: AlertTriangle, color: 'text-orange-600' },
+          { label: t('dashboard.members'),         value: String(memberCount),          icon: Users,         color: 'text-blue-600' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between">
@@ -318,6 +323,26 @@ export default function DashboardPage() {
             </div>
           </div>
         ))}
+
+        {/* 3-30-300 rating card — populated after user gets their score */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">3-30-300 Score</p>
+              <p className={`text-3xl font-bold mt-1 ${
+                treeRating === 'Good' ? 'text-green-600' :
+                treeRating === 'Fair' ? 'text-amber-500' :
+                treeRating === 'Poor' ? 'text-red-500' :
+                'text-gray-300'
+              }`}>
+                {treeRating ?? '—'}
+              </p>
+            </div>
+            <div className="text-emerald-600 bg-gray-50 rounded-xl p-3">
+              <TreePine className="w-6 h-6" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Sightings + Leaderboard ── */}
