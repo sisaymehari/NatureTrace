@@ -7,7 +7,7 @@ import InvasiveAlerts from '@/components/InvasiveAlerts';
 import type { Category, Report } from '@/types';
 import { MapPin, TreePine } from 'lucide-react';
 
-const Map = dynamic(() => import('@/components/Map'), {
+const MapComponent = dynamic(() => import('@/components/Map'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -59,7 +59,7 @@ export default function HomePage() {
             <div className="text-gray-400 text-sm animate-pulse">Loading reports…</div>
           </div>
         ) : (
-          <Map initialReports={reports} activeCategory={activeCategory} />
+          <MapComponent initialReports={reports} activeCategory={activeCategory} />
         )}
         <InvasiveAlerts />
       </div>

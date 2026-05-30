@@ -6,50 +6,7 @@ import { CATEGORY_COLORS } from '@/types';
 import { createClient } from '@/lib/supabase';
 import { Search, X, LocateFixed, TreePine, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-// ─── Demo area: central London ────────────────────────────────────────────────
-const DEMO_BOUNDS = { south: 51.49, west: -0.13, north: 51.52, east: -0.09 } as const;
-
-// Module-level singleton — fetched once per page load, survives React re-mounts
-let _demoNodes: any[] | null = null;
-let _demoPromise: Promise<any[]> | null = null;
-
-function prefetchDemoTrees(): Promise<any[]> {
-  if (_demoNodes) return Promise.resolve(_demoNodes);
-  if (_demoPromise) return _demoPromise;
-  const { south, west, north, east } = DEMO_BOUNDS;
-  _demoPromise = (async () => {
-    try {
-      const body = new URLSearchParams({
-        data: `[out:json][timeout:30];node["natural"="tree"](${south},${west},${north},${east});out 500;`,
-      });
-      const res = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      _demoNodes = data.elements ?? [];
-      console.log(`[Trees] Demo cache: ${_demoNodes!.length} London trees loaded`);
-      return _demoNodes!;
-    } catch (err) {
-      console.error('[Trees] Demo prefetch failed:', err);
-      _demoPromise = null; // allow retry
-      return [];
-    }
-  })();
-  return _demoPromise;
-}
-
-function viewOverlapsDemo(s: number, w: number, n: number, e: number): boolean {
-  return s < DEMO_BOUNDS.north && n > DEMO_BOUNDS.south &&
-         w < DEMO_BOUNDS.east  && e > DEMO_BOUNDS.west;
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-// Lowered from 14 — clustering handles performance at city-view zoom levels
-const MIN_TREE_ZOOM = 12;
+import { HYDE_PARK_TREES, HYDE_PARK_BOUNDS } from '@/lib/hyde-park-trees';
 
 // ─── Popup badge styles ───────────────────────────────────────────────────────
 const POPUP_BADGE: Record<string, { bg: string; color: string; border: string }> = {
@@ -83,11 +40,11 @@ interface NominatimResult {
 }
 
 interface Props {
-  initialReports: Report[];
-  activeCategory: Category | 'all';
+  initialReports?: Report[];
+  activeCategory?: Category | 'all';
 }
 
-export default function Map({ initialReports, activeCategory }: Props) {
+export default function MapComponent({ initialReports = [], activeCategory = 'all' }: Props = {}) {
   const mapRef         = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef     = useRef<any>(null);
@@ -96,14 +53,10 @@ export default function Map({ initialReports, activeCategory }: Props) {
   const [locating, setLocating] = useState(false);
 
   // Map mode
-  const [mapMode, setMapMode]       = useState<'threats' | 'trees'>('threats');
-  const mapModeRef                  = useRef<'threats' | 'trees'>('threats');
-  const [treesLoading, setTreesLoading] = useState(false);
+  const [mapMode, setMapMode]   = useState<'threats' | 'trees'>('threats');
+  const mapModeRef              = useRef<'threats' | 'trees'>('threats');
   const [treeStatusMsg, setTreeStatusMsg] = useState<string | null>(null);
-  const [currentZoom, setCurrentZoom]     = useState(6);
-  const treeLayerRef   = useRef<any>(null);
-  const liveCacheRef   = useRef<Record<string, any[]>>({});   // cache for non-demo viewports
-  const treeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const treeLayerRef = useRef<any>(null);
 
   // Search
   const [searchQuery, setSearchQuery]   = useState('');
@@ -114,7 +67,7 @@ export default function Map({ initialReports, activeCategory }: Props) {
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    (window as any).__nt_verifyTree = () => toast.success('Thank you for verifying!');
+    (window as any).__nt_verifyTree = () => toast.success('Thanks for verifying!');
     return () => { delete (window as any).__nt_verifyTree; };
   }, []);
 
@@ -154,31 +107,14 @@ export default function Map({ initialReports, activeCategory }: Props) {
       mapInstanceRef.current = map;
       renderMarkers(L, map);
 
-      // Kick off London prefetch silently in the background
-      prefetchDemoTrees();
-
       map.on('moveend', () => {
-        const zoom = map.getZoom();
-        if (mapModeRef.current !== 'trees') return;
-
-        setCurrentZoom(zoom);
-
-        if (zoom < MIN_TREE_ZOOM) {
-          if (treeLayerRef.current) map.removeLayer(treeLayerRef.current);
-          if (treeDebounceRef.current) clearTimeout(treeDebounceRef.current);
-          setTreeStatusMsg(null);
-          return;
-        }
-
-        if (treeDebounceRef.current) clearTimeout(treeDebounceRef.current);
-        treeDebounceRef.current = setTimeout(() => fetchAndRenderTrees(L, map), 800);
+        if (mapModeRef.current === 'trees') loadHydeParkTrees(L, map);
       });
     };
 
     init();
 
     return () => {
-      if (treeDebounceRef.current) clearTimeout(treeDebounceRef.current);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -187,153 +123,50 @@ export default function Map({ initialReports, activeCategory }: Props) {
     };
   }, []);
 
-  // ── Smart tree loading ──────────────────────────────────────────────────────
-  const fetchAndRenderTrees = async (L: any, map: any) => {
-    const zoom = map.getZoom();
-    if (zoom < MIN_TREE_ZOOM) return;
+  // ── Hyde Park static tree layer ─────────────────────────────────────────────
+  const loadHydeParkTrees = (L: any, map: any) => {
+    const b = map.getBounds();
+    const overlaps =
+      b.getSouth() < HYDE_PARK_BOUNDS.north && b.getNorth() > HYDE_PARK_BOUNDS.south &&
+      b.getWest()  < HYDE_PARK_BOUNDS.east  && b.getEast()  > HYDE_PARK_BOUNDS.west;
 
-    const bounds = map.getBounds();
-    const vS = bounds.getSouth(), vN = bounds.getNorth();
-    const vW = bounds.getWest(),  vE = bounds.getEast();
-
-    // ── Demo area (London) ──
-    if (viewOverlapsDemo(vS, vW, vN, vE)) {
-      if (_demoNodes) {
-        renderTreeLayer(L, map, _demoNodes);
-        setTreeStatusMsg(`🌳 ${_demoNodes.length} trees mapped · Showing demo area (London)`);
-        return;
-      }
-      // Still loading — await the in-flight promise
-      setTreesLoading(true);
-      setTreeStatusMsg(null);
-      try {
-        const nodes = await prefetchDemoTrees();
-        if (mapModeRef.current === 'trees') {
-          renderTreeLayer(L, map, nodes);
-          setTreeStatusMsg(`🌳 ${nodes.length} trees mapped · Showing demo area (London)`);
-        }
-      } finally {
-        setTreesLoading(false);
-      }
+    if (!overlaps) {
+      if (treeLayerRef.current) { map.removeLayer(treeLayerRef.current); treeLayerRef.current = null; }
+      setTreeStatusMsg('Tree data available for Hyde Park demo area. Zoom to Hyde Park to explore.');
       return;
     }
 
-    // ── Live fetch for other viewports ──
-    const bboxKey = `${vS.toFixed(5)},${vW.toFixed(5)},${vN.toFixed(5)},${vE.toFixed(5)}`;
-
-    if (liveCacheRef.current[bboxKey]) {
-      const cached = liveCacheRef.current[bboxKey];
-      renderTreeLayer(L, map, cached);
-      setTreeStatusMsg(`🌳 ${cached.length} trees mapped`);
-      return;
-    }
-
-    setTreesLoading(true);
-    setTreeStatusMsg(null);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 30_000);
-    try {
-      const body = new URLSearchParams({
-        data:
-          `[out:json][timeout:25];` +
-          `node["natural"="tree"](${vS.toFixed(6)},${vW.toFixed(6)},${vN.toFixed(6)},${vE.toFixed(6)});` +
-          `out 200;`,
-      });
-      const res = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        signal: controller.signal,
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const nodes: any[] = data.elements ?? [];
-      liveCacheRef.current[bboxKey] = nodes;
-      if (mapModeRef.current === 'trees') {
-        renderTreeLayer(L, map, nodes);
-        setTreeStatusMsg(`🌳 ${nodes.length} trees mapped`);
-      }
-    } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        toast.error('Tree data timed out — try zooming into a smaller area.');
-      } else {
-        console.error('[Trees] fetch failed:', err);
-        toast.error('Could not load tree data.');
-      }
-      setTreeStatusMsg(null);
-    } finally {
-      clearTimeout(timer);
-      setTreesLoading(false);
-    }
-  };
-
-  // ── Tree layer renderer (clustered) ────────────────────────────────────────
-  const renderTreeLayer = (L: any, map: any, nodes: any[]) => {
     if (treeLayerRef.current) map.removeLayer(treeLayerRef.current);
+    const group = L.layerGroup();
 
-    const cluster = (L as any).markerClusterGroup({
-      maxClusterRadius: 50,
-      chunkedLoading: true,
-      iconCreateFunction: (c: any) => {
-        const n = c.getChildCount();
-        const size = n > 100 ? 40 : n > 30 ? 36 : 30;
-        return L.divIcon({
-          html:
-            `<div style="` +
-            `background:#2D9E4F;color:#fff;border-radius:50%;` +
-            `width:${size}px;height:${size}px;` +
-            `display:flex;align-items:center;justify-content:center;` +
-            `font-size:${size > 34 ? 12 : 11}px;font-weight:700;` +
-            `border:2px solid rgba(255,255,255,0.85);` +
-            `box-shadow:0 2px 6px rgba(0,0,0,0.25)` +
-            `">${n}</div>`,
-          className: '',
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-        });
-      },
-    });
-
-    nodes.forEach((node: any) => {
-      const { lat, lon, tags = {} } = node;
-      const species: string | null =
-        tags['species:en'] || tags['species'] || tags['name'] || null;
-
-      const circle = L.circleMarker([lat, lon], {
+    HYDE_PARK_TREES.forEach((tree) => {
+      const species = tree.species ?? 'Tree';
+      const circle = L.circleMarker([tree.lat, tree.lng], {
         radius: 6,
         fillColor: '#2D9E4F',
-        color: '#1a7a38',
+        color: '#2D9E4F',
         weight: 1,
-        opacity: 0.85,
-        fillOpacity: 0.75,
+        opacity: 1,
+        fillOpacity: 0.8,
       });
-
-      const speciesRow = species
-        ? `<p style="margin:0 0 3px;font-size:14px;font-weight:700;color:#111827;line-height:1.3">${species}</p>`
-        : `<p style="margin:0 0 3px;font-size:13px;color:#9CA3AF;font-style:italic">Common tree</p>`;
-
       circle.bindPopup(
-        `<div style="font-family:system-ui,Arial,sans-serif;width:210px;padding:4px 2px">
-          <div style="font-size:30px;text-align:center;margin-bottom:8px;line-height:1">🌳</div>
-          ${speciesRow}
-          <p style="margin:0 0 10px;font-size:11px;color:#9CA3AF">
-            ${parseFloat(lat).toFixed(5)}, ${parseFloat(lon).toFixed(5)}
-          </p>
+        `<div style="font-family:system-ui,Arial,sans-serif;min-width:140px;padding:2px 0">
+          <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#111827;line-height:1.3">${species}</p>
           <button
             onclick="window.__nt_verifyTree()"
-            style="width:100%;background:#1D6A48;color:white;border:none;border-radius:8px;padding:7px 0;font-size:12px;font-weight:600;cursor:pointer"
+            style="width:100%;background:#1D6A48;color:white;border:none;border-radius:8px;padding:7px 0;font-size:13px;font-weight:600;cursor:pointer"
             onmouseover="this.style.background='#155740'"
             onmouseout="this.style.background='#1D6A48'"
-          >Verify this tree</button>
+          >✓ Verify</button>
         </div>`,
-        { maxWidth: 240 }
+        { maxWidth: 200 }
       );
-
-      cluster.addLayer(circle);
+      group.addLayer(circle);
     });
 
-    cluster.addTo(map);
-    treeLayerRef.current = cluster;
+    group.addTo(map);
+    treeLayerRef.current = group;
+    setTreeStatusMsg('🌳 200 trees mapped — Hyde Park demo');
   };
 
   // ── Mode switch effect ──────────────────────────────────────────────────────
@@ -343,11 +176,10 @@ export default function Map({ initialReports, activeCategory }: Props) {
     const map = mapInstanceRef.current;
 
     if (mapMode === 'trees') {
-      setCurrentZoom(map.getZoom());
       if (markersRef.current) map.removeLayer(markersRef.current);
-      fetchAndRenderTrees(L, map);
+      loadHydeParkTrees(L, map);
     } else {
-      if (treeLayerRef.current) map.removeLayer(treeLayerRef.current);
+      if (treeLayerRef.current) { map.removeLayer(treeLayerRef.current); treeLayerRef.current = null; }
       setTreeStatusMsg(null);
       renderMarkers(L, map);
     }
@@ -488,14 +320,9 @@ export default function Map({ initialReports, activeCategory }: Props) {
 
   // ── Derived status bar ──────────────────────────────────────────────────────
   const statusBar = (() => {
-    if (mapMode !== 'trees') return null;
-    if (currentZoom < MIN_TREE_ZOOM)
-      return { spinner: false, icon: '🔍', text: 'Zoom in to see trees', color: 'text-gray-500' };
-    if (treesLoading)
-      return { spinner: true, icon: null, text: 'Loading trees…', color: 'text-gray-500' };
-    if (treeStatusMsg)
-      return { spinner: false, icon: null, text: treeStatusMsg, color: 'text-emerald-700' };
-    return null;
+    if (mapMode !== 'trees' || !treeStatusMsg) return null;
+    const isDemo = treeStatusMsg.startsWith('🌳');
+    return { text: treeStatusMsg, color: isDemo ? 'text-emerald-700' : 'text-gray-500' };
   })();
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -523,20 +350,13 @@ export default function Map({ initialReports, activeCategory }: Props) {
         >
           <TreePine className="w-3.5 h-3.5" />
           Explore Trees
-          {treesLoading && (
-            <span className="block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-          )}
         </button>
       </div>
 
       {/* Tree status / counter pill */}
       {statusBar && (
         <div className="absolute top-14 right-3 z-[1000]">
-          <div className={`bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-md border border-gray-200 text-xs font-medium flex items-center gap-1.5 ${statusBar.color}`}>
-            {statusBar.spinner && (
-              <span className="block w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin flex-shrink-0" />
-            )}
-            {statusBar.icon && <span>{statusBar.icon}</span>}
+          <div className={`bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-md border border-gray-200 text-xs font-medium ${statusBar.color}`}>
             {statusBar.text}
           </div>
         </div>
