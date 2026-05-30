@@ -30,7 +30,7 @@ const STEPS = [
   },
 ];
 
-const STORAGE_KEY = 'bioguard_onboarded';
+const STORAGE_KEY = 'naturetrace_onboarded';
 
 export default function OnboardingOverlay() {
   const [visible, setVisible] = useState(false);
