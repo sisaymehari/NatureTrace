@@ -37,23 +37,28 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col relative" style={{ height: 'calc(100vh - 64px)' }}>
-      {/* Stats + filter bar */}
-      <div className="bg-white border-b border-gray-100 shadow-sm z-10 flex items-center gap-3 px-4 py-2 text-sm text-gray-600">
-        {/* Stats — fixed left */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-xs"><strong>{stats.total}</strong> reports</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <TreePine className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-xs"><strong>{stats.species}</strong> species</span>
-          </div>
+      {/* Filter / stats bar */}
+      <div className="bg-white border-b border-gray-100 shadow-sm z-10">
+        {/* Mobile: filter pills only — full-width scrollable row */}
+        <div className="md:hidden overflow-x-auto scrollbar-hide px-3 py-2">
+          <CategoryFilter active={activeCategory} onChange={setActiveCategory} compact />
         </div>
-        <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
-        {/* Filter pills — scrollable on mobile */}
-        <div className="flex-1 overflow-x-auto min-w-0 scrollbar-hide">
-          <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
+        {/* Desktop: stats + filter pills on one row */}
+        <div className="hidden md:flex items-center gap-3 px-4 py-2 text-sm text-gray-600">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-xs"><strong>{stats.total}</strong> reports</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <TreePine className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-xs"><strong>{stats.species}</strong> species</span>
+            </div>
+          </div>
+          <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
+          <div className="flex-1 overflow-x-auto min-w-0 scrollbar-hide">
+            <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
+          </div>
         </div>
       </div>
 

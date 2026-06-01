@@ -19,9 +19,10 @@ const THREAT_CATS: Array<{ value: Category; label: string }> = [
 interface Props {
   active: Category | 'all';
   onChange: (cat: Category | 'all') => void;
+  compact?: boolean;
 }
 
-export default function CategoryFilter({ active, onChange }: Props) {
+export default function CategoryFilter({ active, onChange, compact = false }: Props) {
   const renderBtn = (value: Category | 'all', label: string) => {
     const colors = value !== 'all' ? CATEGORY_COLORS[value] : null;
     const isActive = active === value;
@@ -29,7 +30,9 @@ export default function CategoryFilter({ active, onChange }: Props) {
       <button
         key={value}
         onClick={() => onChange(value)}
-        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap ${
+        className={`rounded-full font-medium border transition-all whitespace-nowrap ${
+          compact ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1.5 text-xs'
+        } ${
           isActive
             ? value === 'all'
               ? 'bg-emerald-700 text-white border-emerald-600 ring-1 ring-emerald-500'
