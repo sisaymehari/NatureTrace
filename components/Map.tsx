@@ -198,10 +198,10 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
       if (!report.latitude || !report.longitude) return;
       const color = CATEGORY_COLORS[report.category]?.pin ?? '#1D6A48';
       const icon = L.divIcon({
-        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,
+        html: `<div class="marker-fade-in" style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div>`,
         className: '',
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
         popupAnchor: [0, -10],
       });
       const marker = L.marker([report.latitude, report.longitude], { icon });
@@ -328,83 +328,102 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="relative w-full h-full min-h-[500px]">
-      <div ref={mapRef} className="w-full h-full" />
+      {/* Map canvas fills container */}
+      <div ref={mapRef} className="absolute inset-0" />
 
-      {/* Mode toggle — pill style, top-right */}
-      <div className="absolute top-3 right-3 z-[400] flex bg-white/95 backdrop-blur-sm rounded-full p-1 shadow-md border border-gray-200">
-        <button
-          onClick={() => setMapMode('threats')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-            mapMode === 'threats' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'
-          }`}
-        >
-          <span>⚠️</span> Report
-        </button>
-        <button
-          onClick={() => setMapMode('trees')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-            mapMode === 'trees' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'
-          }`}
-        >
-          <span>🌳</span> Explore
-        </button>
-      </div>
+      {/*
+       * Single overlay wrapper with zIndex above ALL Leaflet internals.
+       * Leaflet tiles/markers use z-index 200-900 internally.
+       * pointer-events:none on wrapper; restored per-element below.
+       */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1000 }}>
 
-      {/* Tree status / counter pill */}
-      {statusBar && (
-        <div className="absolute top-14 right-3 z-[400]">
-          <div className={`bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-md border border-gray-200 text-xs font-medium ${statusBar.color}`}>
-            {statusBar.text}
+        {/* Search — full width on mobile, centred on desktop */}
+        <div
+          ref={searchContainerRef}
+          className="absolute top-3 left-3 right-3 pointer-events-auto
+                     md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-full md:max-w-sm md:px-3"
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowResults(true)}
+              placeholder="Search for a location…"
+              className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-gray-200 shadow-lg bg-white/95 backdrop-blur-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear">
+                {isSearching
+                  ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
+                  : <X className="w-4 h-4" />}
+              </button>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Location search — top-center */}
-      <div ref={searchContainerRef} className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] w-full max-w-sm px-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            onFocus={() => searchResults.length > 0 && setShowResults(true)}
-            placeholder="Search for a location…"
-            className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-gray-200 shadow-lg bg-white/95 backdrop-blur-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          />
-          {searchQuery && (
-            <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear">
-              {isSearching
-                ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
-                : <X className="w-4 h-4" />}
-            </button>
+          {showResults && (
+            <ul className="mt-1 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+              {searchResults.length > 0
+                ? searchResults.map((r) => (
+                    <li key={r.place_id} onMouseDown={() => handleSelect(r)}
+                      className="px-4 py-2.5 cursor-pointer hover:bg-emerald-50 border-b border-gray-50 last:border-0">
+                      <div className="text-sm font-medium text-gray-800 truncate">{r.display_name.split(',')[0]}</div>
+                      <div className="text-xs text-gray-500 truncate mt-0.5">{r.display_name.split(',').slice(1, 3).join(',')}</div>
+                    </li>
+                  ))
+                : !isSearching && <li className="px-4 py-3 text-sm text-gray-400">No results found</li>}
+            </ul>
           )}
         </div>
-        {showResults && (
-          <ul className="mt-1 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-            {searchResults.length > 0
-              ? searchResults.map((r) => (
-                  <li key={r.place_id} onMouseDown={() => handleSelect(r)}
-                    className="px-4 py-2.5 cursor-pointer hover:bg-emerald-50 border-b border-gray-50 last:border-0">
-                    <div className="text-sm font-medium text-gray-800 truncate">{r.display_name.split(',')[0]}</div>
-                    <div className="text-xs text-gray-500 truncate mt-0.5">{r.display_name.split(',').slice(1, 3).join(',')}</div>
-                  </li>
-                ))
-              : !isSearching && <li className="px-4 py-3 text-sm text-gray-400">No results found</li>}
-          </ul>
-        )}
-      </div>
 
-      {/* Locate me — bottom-left */}
-      <button
-        onClick={handleLocate}
-        disabled={locating}
-        title="Go to my location"
-        className="absolute bottom-8 left-3 z-[400] w-9 h-9 bg-white/95 backdrop-blur-sm rounded-xl shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:text-emerald-600 hover:border-emerald-400 transition-colors disabled:opacity-50"
-      >
-        {locating
-          ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
-          : <LocateFixed className="w-4 h-4" />}
-      </button>
+        {/*
+         * Toggle pill:
+         *   mobile  — below search (top-[58px], search is top-3 + ~42px tall)
+         *   desktop — top-right beside search (md:top-3)
+         */}
+        <div className="absolute top-[58px] right-3 pointer-events-auto md:top-3">
+          <div className="flex bg-white/95 backdrop-blur-sm rounded-full p-1 shadow-md border border-gray-200">
+            <button
+              onClick={() => setMapMode('threats')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                mapMode === 'threats' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <span>⚠️</span> Report
+            </button>
+            <button
+              onClick={() => setMapMode('trees')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                mapMode === 'trees' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <span>🌳</span> Explore
+            </button>
+          </div>
+        </div>
+
+        {/* Tree status pill — below toggle */}
+        {statusBar && (
+          <div className="absolute top-[104px] right-3 pointer-events-auto md:top-[58px]">
+            <div className={`bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-md border border-gray-200 text-xs font-medium ${statusBar.color}`}>
+              {statusBar.text}
+            </div>
+          </div>
+        )}
+
+        {/* Locate me — bottom-left */}
+        <button
+          onClick={handleLocate}
+          disabled={locating}
+          title="Go to my location"
+          className="absolute bottom-8 left-3 pointer-events-auto w-9 h-9 bg-white/95 backdrop-blur-sm rounded-xl shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:text-emerald-600 hover:border-emerald-400 transition-colors disabled:opacity-50"
+        >
+          {locating
+            ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
+            : <LocateFixed className="w-4 h-4" />}
+        </button>
+      </div>
     </div>
   );
 }

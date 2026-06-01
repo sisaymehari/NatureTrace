@@ -42,8 +42,8 @@ export default function InvasiveAlerts() {
      * Mobile  : bottom 80px, full-width with horizontal padding, centered
      * Desktop : top 120px, right 10px, fixed 360px wide, z-index 800
      */
-    <div className="absolute top-14 left-3 right-3 z-[300] space-y-2 pointer-events-none
-                    md:left-auto md:right-3 md:w-80">
+    <div className="fixed left-3 right-3 z-[1100] space-y-2 pointer-events-none
+                    top-[210px] md:left-auto md:right-3 md:w-80 md:top-[168px]">
       {alerts.map((report, i) => (
         // 3rd banner hidden on mobile, visible on desktop
         <div key={report.id} className={i >= 2 ? 'hidden md:block' : ''}>

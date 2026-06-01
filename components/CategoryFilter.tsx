@@ -32,8 +32,8 @@ export default function CategoryFilter({ active, onChange }: Props) {
         className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap ${
           isActive
             ? value === 'all'
-              ? 'bg-emerald-700 text-white border-emerald-700'
-              : `${colors?.bg} ${colors?.text} ${colors?.border}`
+              ? 'bg-emerald-700 text-white border-emerald-600 ring-1 ring-emerald-500'
+              : `${colors?.bg} ${colors?.text} ${colors?.border} ring-1 ring-emerald-400`
             : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
         }`}
       >
@@ -43,7 +43,7 @@ export default function CategoryFilter({ active, onChange }: Props) {
   };
 
   return (
-    <div className="flex gap-1.5 flex-nowrap items-center">
+    <div className="inline-flex gap-1.5 flex-nowrap items-center">
       {renderBtn('all', 'All')}
       <span className="w-px h-4 bg-gray-200 mx-0.5" />
       {SPECIES_CATS.map(({ value, label }) => renderBtn(value, label))}

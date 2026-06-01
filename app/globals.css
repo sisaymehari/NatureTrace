@@ -28,6 +28,14 @@ html, body {
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+@keyframes markerFadeIn {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.marker-fade-in {
+  animation: markerFadeIn 0.18s ease-out forwards;
+}
+
 @keyframes alertIn {
   from { opacity: 0; transform: translateY(6px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1); }
