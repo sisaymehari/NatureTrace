@@ -37,7 +37,8 @@ const ALL_CATS = [...SPECIES_CATS, ...THREAT_CATS];
 
 export default function ReportPage() {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef    = useRef<HTMLInputElement>(null); // library (no capture)
+  const cameraRef  = useRef<HTMLInputElement>(null); // camera direct
 
   const [category, setCategory] = useState<Category>('wildlife');
   const [speciesName, setSpeciesName] = useState('');
@@ -283,20 +284,49 @@ export default function ReportPage() {
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-full h-40 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-emerald-400 transition-colors text-gray-400 hover:text-emerald-600"
-            >
-              <Upload className="w-8 h-8" />
-              <span className="text-sm font-medium">{t('report.uploadPhoto')}</span>
-              <span className="text-xs">
-                {isThreat ? t('report.threatHint') : t('report.aiHint')}
-              </span>
-            </button>
+            <>
+              {/* Mobile — two large tap targets */}
+              <div className="flex md:hidden gap-3">
+                <button
+                  type="button"
+                  onClick={() => cameraRef.current?.click()}
+                  className="flex-1 flex flex-col items-center justify-center gap-2 py-6 bg-emerald-50 border-2 border-emerald-200 rounded-xl text-emerald-700 active:bg-emerald-100"
+                >
+                  <span className="text-3xl">📷</span>
+                  <span className="text-sm font-semibold">Take Photo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex-1 flex flex-col items-center justify-center gap-2 py-6 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-700 active:bg-gray-100"
+                >
+                  <span className="text-3xl">🖼️</span>
+                  <span className="text-sm font-semibold">Choose from Library</span>
+                </button>
+              </div>
+              {/* Desktop — drag-and-drop zone */}
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="hidden md:flex w-full h-40 border-2 border-dashed border-gray-200 rounded-lg flex-col items-center justify-center gap-2 hover:border-emerald-400 transition-colors text-gray-400 hover:text-emerald-600"
+              >
+                <Upload className="w-8 h-8" />
+                <span className="text-sm font-medium">{t('report.uploadPhoto')}</span>
+                <span className="text-xs">
+                  {isThreat ? t('report.threatHint') : t('report.aiHint')}
+                </span>
+              </button>
+            </>
           )}
+          {/* Camera input — opens camera directly */}
           <input
-            ref={fileRef} type="file" accept="image/*" capture="environment"
+            ref={cameraRef} type="file" accept="image/*" capture="environment"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])}
+          />
+          {/* Library input — opens photo picker */}
+          <input
+            ref={fileRef} type="file" accept="image/*"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])}
           />

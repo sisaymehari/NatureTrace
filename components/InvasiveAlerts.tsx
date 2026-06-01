@@ -46,7 +46,7 @@ export default function InvasiveAlerts() {
   if (alerts.length === 0) return null;
 
   return (
-    <div className="absolute top-2 left-0 right-0 z-[900] px-4 space-y-2 pointer-events-none">
+    <div className="absolute bottom-24 left-0 right-0 z-[900] px-4 space-y-2 pointer-events-none md:bottom-auto md:top-16">
       {alerts.map((report) => (
         <AlertBanner key={report.id} report={report} onDismiss={() => dismiss(report.id)} />
       ))}
