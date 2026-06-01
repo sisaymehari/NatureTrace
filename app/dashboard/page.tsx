@@ -42,6 +42,7 @@ const CHART_LABELS: Record<string, string> = {
 };
 
 interface Stats {
+  totalAllTime:      number;
   totalThisMonth:    number;
   totalLastMonth:    number;
   uniqueSpecies:     number;
@@ -182,16 +183,20 @@ export default function DashboardPage() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 
-          {/* Reports this month */}
+          {/* Reports this month — falls back to all-time when month just started */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500">{t('dashboard.reportsThisMonth')}</span>
+              <span className="text-xs font-semibold text-gray-500">
+                {stats?.totalThisMonth === 0 ? 'Total Reports' : t('dashboard.reportsThisMonth')}
+              </span>
               <CalendarDays className="w-4 h-4 text-emerald-500" />
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">
-              {statsLoading ? '…' : stats?.totalThisMonth ?? 0}
+              {statsLoading ? '…' : (stats?.totalThisMonth === 0 ? (stats?.totalAllTime ?? 0) : (stats?.totalThisMonth ?? 0))}
             </p>
-            {stats && <Trend now={stats.totalThisMonth} prev={stats.totalLastMonth} vsLabel={t('dashboard.trendVsLast')} sameLabel={t('dashboard.trendSame')} />}
+            {stats && stats.totalThisMonth > 0 && (
+              <Trend now={stats.totalThisMonth} prev={stats.totalLastMonth} vsLabel={t('dashboard.trendVsLast')} sameLabel={t('dashboard.trendSame')} />
+            )}
           </div>
 
           {/* Unique species */}

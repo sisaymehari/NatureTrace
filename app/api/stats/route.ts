@@ -12,6 +12,7 @@ export async function GET() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
 
     const [
+      { count: totalAllTime },
       { count: totalThisMonth },
       { count: totalLastMonth },
       { count: invasiveThisMonth },
@@ -20,6 +21,7 @@ export async function GET() {
       { count: threatsLastMonth },
       { data: allReports },
     ] = await Promise.all([
+      service.from('reports').select('id', { count: 'exact', head: true }),
       service.from('reports').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),
       service.from('reports').select('id', { count: 'exact', head: true }).gte('created_at', lastMonthStart).lt('created_at', monthStart),
       service.from('reports').select('id', { count: 'exact', head: true }).eq('is_invasive', true).gte('created_at', monthStart),
@@ -78,6 +80,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      totalAllTime:      totalAllTime      ?? 0,
       totalThisMonth:    totalThisMonth    ?? 0,
       totalLastMonth:    totalLastMonth    ?? 0,
       uniqueSpecies,
