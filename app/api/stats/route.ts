@@ -37,16 +37,29 @@ export async function GET() {
       speciesOnly.map((r) => r.species_name).filter(Boolean)
     ).size;
 
-    // Most active region (first comma-segment of location_name)
+    // Most active region — pick the first comma-segment that looks like a place name
+    // (not a bare number, postcode fragment, or very short token)
+    const cleanRegion = (raw: string): string | null => {
+      const segments = raw.split(',').map((s) => s.trim()).filter(Boolean);
+      for (const seg of segments) {
+        // skip if it's purely numeric, a UK-style postcode, or too short
+        if (/^\d+$/.test(seg)) continue;
+        if (/^[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}$/i.test(seg)) continue;
+        if (seg.length < 3) continue;
+        return seg;
+      }
+      return null;
+    };
+
     const regionCounts: Record<string, number> = {};
     reports.forEach((r) => {
       if (r.location_name) {
-        const region = r.location_name.split(',')[0].trim();
-        if (region) regionCounts[region] = (regionCounts[region] ?? 0) + 1;
+        const region = cleanRegion(r.location_name) ?? 'London area';
+        regionCounts[region] = (regionCounts[region] ?? 0) + 1;
       }
     });
     const mostActiveRegion =
-      Object.entries(regionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+      Object.entries(regionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'London area';
 
     // Most reported species
     const speciesCounts: Record<string, number> = {};
