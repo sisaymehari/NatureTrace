@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Report, Category } from '@/types';
 import { CATEGORY_COLORS } from '@/types';
 import { createClient } from '@/lib/supabase';
-import { Search, X, LocateFixed, TreePine, AlertTriangle } from 'lucide-react';
+import { Search, X, LocateFixed } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { HYDE_PARK_TREES, HYDE_PARK_BOUNDS } from '@/lib/hyde-park-trees';
 
@@ -330,40 +330,37 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
     <div className="relative w-full h-full min-h-[500px]">
       <div ref={mapRef} className="w-full h-full" />
 
-      {/* Mode toggle — top-right */}
-      <div className="absolute top-3 right-3 z-[1000] flex rounded-xl overflow-hidden shadow-md border border-gray-200 bg-white">
+      {/* Mode toggle — pill style, top-right */}
+      <div className="absolute top-3 right-3 z-[400] flex bg-white/95 backdrop-blur-sm rounded-full p-1 shadow-md border border-gray-200">
         <button
           onClick={() => setMapMode('threats')}
-          className={`px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-            mapMode === 'threats' ? 'bg-emerald-700 text-white' : 'text-gray-600 hover:bg-gray-50'
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            mapMode === 'threats' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'
           }`}
         >
-          <AlertTriangle className="w-3.5 h-3.5" />
-          Report Threat
+          <span>⚠️</span> Report
         </button>
-        <div className="w-px bg-gray-200" />
         <button
           onClick={() => setMapMode('trees')}
-          className={`px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-            mapMode === 'trees' ? 'bg-emerald-700 text-white' : 'text-gray-600 hover:bg-gray-50'
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            mapMode === 'trees' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50'
           }`}
         >
-          <TreePine className="w-3.5 h-3.5" />
-          Explore Trees
+          <span>🌳</span> Explore
         </button>
       </div>
 
       {/* Tree status / counter pill */}
       {statusBar && (
-        <div className="absolute top-14 right-3 z-[1000]">
-          <div className={`bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-md border border-gray-200 text-xs font-medium ${statusBar.color}`}>
+        <div className="absolute top-14 right-3 z-[400]">
+          <div className={`bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-md border border-gray-200 text-xs font-medium ${statusBar.color}`}>
             {statusBar.text}
           </div>
         </div>
       )}
 
       {/* Location search — top-center */}
-      <div ref={searchContainerRef} className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-sm px-3">
+      <div ref={searchContainerRef} className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] w-full max-w-sm px-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
@@ -372,7 +369,7 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => searchResults.length > 0 && setShowResults(true)}
             placeholder="Search for a location…"
-            className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-gray-200 shadow-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-gray-200 shadow-lg bg-white/95 backdrop-blur-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
           {searchQuery && (
             <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear">
@@ -402,7 +399,7 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
         onClick={handleLocate}
         disabled={locating}
         title="Go to my location"
-        className="absolute bottom-8 left-3 z-[1000] w-9 h-9 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:text-emerald-600 hover:border-emerald-400 transition-colors disabled:opacity-50"
+        className="absolute bottom-8 left-3 z-[400] w-9 h-9 bg-white/95 backdrop-blur-sm rounded-xl shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:text-emerald-600 hover:border-emerald-400 transition-colors disabled:opacity-50"
       >
         {locating
           ? <span className="block w-4 h-4 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />

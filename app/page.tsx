@@ -38,16 +38,21 @@ export default function HomePage() {
   return (
     <div className="flex flex-col relative" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Stats + filter bar */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2 flex flex-wrap items-center gap-4 text-sm text-gray-600 z-10">
-        <div className="flex items-center gap-1.5">
-          <MapPin className="w-4 h-4 text-emerald-600" />
-          <span><strong>{stats.total}</strong> reports</span>
+      <div className="bg-white border-b border-gray-100 shadow-sm z-10 flex items-center gap-3 px-4 py-2 text-sm text-gray-600">
+        {/* Stats — fixed left */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="text-xs"><strong>{stats.total}</strong> reports</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <TreePine className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="text-xs"><strong>{stats.species}</strong> species</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <TreePine className="w-4 h-4 text-emerald-600" />
-          <span><strong>{stats.species}</strong> species</span>
-        </div>
-        <div className="ml-auto">
+        <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
+        {/* Filter pills — scrollable on mobile */}
+        <div className="flex-1 overflow-x-auto min-w-0 scrollbar-hide">
           <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
         </div>
       </div>
@@ -68,7 +73,7 @@ export default function HomePage() {
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto">
         <a
           href="/report"
-          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-6 py-3 rounded-full shadow-lg transition-all hover:shadow-xl text-sm"
+          className="bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-semibold px-7 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all text-sm active:scale-95"
         >
           + Submit a Report
         </a>

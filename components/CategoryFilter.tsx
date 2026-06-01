@@ -43,7 +43,7 @@ export default function CategoryFilter({ active, onChange }: Props) {
   };
 
   return (
-    <div className="flex gap-1.5 flex-wrap items-center">
+    <div className="flex gap-1.5 flex-nowrap items-center">
       {renderBtn('all', 'All')}
       <span className="w-px h-4 bg-gray-200 mx-0.5" />
       {SPECIES_CATS.map(({ value, label }) => renderBtn(value, label))}
