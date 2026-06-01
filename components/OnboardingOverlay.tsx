@@ -10,7 +10,7 @@ const STEPS = [
     iconColor: 'text-emerald-300',
     number: '01',
     title: 'Spot it',
-    description: 'Take a photo of wildlife, plants, or environmental threats wherever you are in the UK.',
+    description: 'Take a photo of wildlife, plants, or environmental threats.',
   },
   {
     icon: Sparkles,
@@ -18,7 +18,7 @@ const STEPS = [
     iconColor: 'text-blue-300',
     number: '02',
     title: 'Report it',
-    description: 'AI automatically identifies the species and captures your GPS location for accuracy.',
+    description: 'AI identifies the species and captures your GPS location.',
   },
   {
     icon: MapPin,
@@ -26,13 +26,12 @@ const STEPS = [
     iconColor: 'text-amber-300',
     number: '03',
     title: 'Protect it',
-    description: 'Your report alerts conservationists and appears instantly on the live community map.',
+    description: 'Your report alerts conservationists on the live community map.',
   },
 ];
 
 const STORAGE_KEY = 'naturetrace_onboarded';
 
-// Safe localStorage wrappers — never throw even in restricted Android contexts
 function lsGet(key: string): string | null {
   try { return localStorage.getItem(key); } catch { return null; }
 }
@@ -45,7 +44,6 @@ export default function OnboardingOverlay() {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    // Hard URL-param bypass — works even when localStorage is unavailable
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get('skip') === '1') return;
@@ -62,98 +60,126 @@ export default function OnboardingOverlay() {
     setFading(true);
     setTimeout(() => {
       if (wrote) {
-        // localStorage succeeded — just hide the overlay in place
         setVisible(false);
       } else {
-        // localStorage unavailable (Android private mode, etc.) — hard navigate
-        // with the skip param so the overlay won't reappear
         window.location.href = '/?skip=1';
       }
-    }, 380);
+    }, 360);
   };
 
   if (!visible) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] overflow-y-auto"
       style={{
-        transition: 'opacity 380ms ease',
+        transition: 'opacity 360ms ease',
         opacity: fading ? 0 : 1,
         pointerEvents: fading ? 'none' : 'auto',
       }}
     >
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-green-900" />
-
-      {/* Subtle dot grid */}
+      {/* Fixed backgrounds */}
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-green-900 pointer-events-none" />
       <div
-        className="absolute inset-0"
+        className="fixed inset-0 pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
           backgroundSize: '28px 28px',
         }}
       />
 
-      {/* Content */}
+      {/*
+       * Scrollable content column.
+       * min-height: 100dvh accounts for Android Chrome's collapsing address bar.
+       * flex-col with flex-1 on the middle section pushes the CTA to the bottom,
+       * so it's always visible without needing position:sticky.
+       */}
       <div
-        className="relative z-10 max-w-2xl w-full text-center"
-        style={{
-          transition: 'opacity 380ms ease, transform 380ms ease',
-          opacity: fading ? 0 : 1,
-          transform: fading ? 'translateY(12px)' : 'translateY(0)',
-        }}
+        className="relative z-10 flex flex-col px-4 pt-3 pb-6 max-w-2xl mx-auto w-full"
+        style={{ minHeight: '100dvh' }}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-5">
-          <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/40 ring-4 ring-emerald-400/20">
-            <TreePine className="w-8 h-8 text-white" />
-          </div>
-          <span className="text-4xl font-bold text-white tracking-tight">NatureTrace</span>
-        </div>
-
-        {/* Tagline */}
-        <p className="text-emerald-300 text-lg font-medium mb-10 tracking-wide">
-          Every tree. Every threat. Every citizen.
-        </p>
-
-        {/* Step cards — no backdrop-filter to avoid Android GPU stalls */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-left">
-          {STEPS.map(({ icon: Icon, bg, iconColor, number, title, description }) => (
-            <div
-              key={number}
-              className="rounded-2xl p-5 border border-white/10"
-              style={{ background: 'rgba(255,255,255,0.07)' }}
-            >
-              <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center mb-4`}>
-                <Icon className={`w-5 h-5 ${iconColor}`} />
-              </div>
-              <p className="text-xs font-bold text-white/35 uppercase tracking-widest mb-1">
-                Step {number}
-              </p>
-              <h3 className="text-white font-bold text-xl mb-2">{title}</h3>
-              <p className="text-white/55 text-sm leading-relaxed">{description}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Primary CTA */}
-        <button
-          onClick={dismiss}
-          className="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 active:scale-95 text-white font-bold px-12 py-4 rounded-full text-base shadow-lg transition-all duration-150 touch-manipulation"
-        >
-          Get Started
-        </button>
-
-        {/* Skip — <a> href is the hard fallback if JS fails entirely */}
-        <div className="mt-5">
+        {/* ── Top bar: skip link ── */}
+        <div className="flex justify-end mb-3">
           <a
             href="/?skip=1"
             onClick={(e) => { e.preventDefault(); dismiss(); }}
-            className="text-white/40 hover:text-white/70 text-sm transition-colors touch-manipulation"
+            className="text-white/50 hover:text-white/80 text-sm font-medium touch-manipulation"
           >
-            Skip for now →
+            Skip intro →
           </a>
+        </div>
+
+        {/* ── Main content — flex-1 pushes CTA down ── */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2.5 mb-3">
+            <div className="w-11 h-11 sm:w-14 sm:h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg ring-4 ring-emerald-400/20">
+              <TreePine className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+            </div>
+            <span className="text-3xl sm:text-4xl font-bold text-white tracking-tight">NatureTrace</span>
+          </div>
+
+          {/* Tagline */}
+          <p className="text-emerald-300 text-sm sm:text-lg font-medium mb-6 tracking-wide">
+            Every tree. Every threat. Every citizen.
+          </p>
+
+          {/* Step cards
+              Mobile (< sm): compact horizontal row per step
+              Desktop (sm+): original 3-column grid              */}
+          <div className="w-full mb-6">
+            {/* Mobile compact list */}
+            <div className="flex flex-col gap-2.5 sm:hidden">
+              {STEPS.map(({ icon: Icon, bg, iconColor, number, title, description }) => (
+                <div
+                  key={number}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 border border-white/10 text-left"
+                  style={{ background: 'rgba(255,255,255,0.07)' }}
+                >
+                  <div className={`w-9 h-9 flex-shrink-0 ${bg} rounded-xl flex items-center justify-center`}>
+                    <Icon className={`w-4 h-4 ${iconColor}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-white/35 uppercase tracking-widest leading-none mb-0.5">
+                      Step {number}
+                    </p>
+                    <p className="text-white font-semibold text-sm leading-tight">{title}</p>
+                    <p className="text-white/50 text-xs leading-snug mt-0.5 line-clamp-1">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop full grid */}
+            <div className="hidden sm:grid sm:grid-cols-3 gap-4 text-left">
+              {STEPS.map(({ icon: Icon, bg, iconColor, number, title, description }) => (
+                <div
+                  key={number}
+                  className="rounded-2xl p-5 border border-white/10"
+                  style={{ background: 'rgba(255,255,255,0.07)' }}
+                >
+                  <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center mb-4`}>
+                    <Icon className={`w-5 h-5 ${iconColor}`} />
+                  </div>
+                  <p className="text-xs font-bold text-white/35 uppercase tracking-widest mb-1">
+                    Step {number}
+                  </p>
+                  <h3 className="text-white font-bold text-xl mb-2">{title}</h3>
+                  <p className="text-white/55 text-sm leading-relaxed">{description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── CTA — always at bottom of column ── */}
+        <div className="text-center">
+          <button
+            onClick={dismiss}
+            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 active:scale-95 text-white font-bold px-12 py-4 rounded-full text-base shadow-lg transition-all duration-150 touch-manipulation"
+          >
+            Get Started
+          </button>
         </div>
       </div>
     </div>
