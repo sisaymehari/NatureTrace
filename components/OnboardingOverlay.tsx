@@ -32,22 +32,44 @@ const STEPS = [
 
 const STORAGE_KEY = 'naturetrace_onboarded';
 
+// Safe localStorage wrappers — never throw even in restricted Android contexts
+function lsGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function lsSet(key: string, value: string): boolean {
+  try { localStorage.setItem(key, value); return true; } catch { return false; }
+}
+
 export default function OnboardingOverlay() {
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      // Small delay so the page content renders first — avoids a flash of just the overlay
+    // Hard URL-param bypass — works even when localStorage is unavailable
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('skip') === '1') return;
+    } catch {}
+
+    if (!lsGet(STORAGE_KEY)) {
       const t = setTimeout(() => setVisible(true), 80);
       return () => clearTimeout(t);
     }
   }, []);
 
   const dismiss = () => {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    const wrote = lsSet(STORAGE_KEY, 'true');
     setFading(true);
-    setTimeout(() => setVisible(false), 550);
+    setTimeout(() => {
+      if (wrote) {
+        // localStorage succeeded — just hide the overlay in place
+        setVisible(false);
+      } else {
+        // localStorage unavailable (Android private mode, etc.) — hard navigate
+        // with the skip param so the overlay won't reappear
+        window.location.href = '/?skip=1';
+      }
+    }, 380);
   };
 
   if (!visible) return null;
@@ -56,12 +78,12 @@ export default function OnboardingOverlay() {
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{
-        transition: 'opacity 550ms ease',
+        transition: 'opacity 380ms ease',
         opacity: fading ? 0 : 1,
         pointerEvents: fading ? 'none' : 'auto',
       }}
     >
-      {/* Gradient background */}
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-green-900" />
 
       {/* Subtle dot grid */}
@@ -73,15 +95,11 @@ export default function OnboardingOverlay() {
         }}
       />
 
-      {/* Glow orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-400/10 rounded-full blur-3xl pointer-events-none" />
-
       {/* Content */}
       <div
         className="relative z-10 max-w-2xl w-full text-center"
         style={{
-          transition: 'opacity 550ms ease, transform 550ms ease',
+          transition: 'opacity 380ms ease, transform 380ms ease',
           opacity: fading ? 0 : 1,
           transform: fading ? 'translateY(12px)' : 'translateY(0)',
         }}
@@ -99,13 +117,13 @@ export default function OnboardingOverlay() {
           Every tree. Every threat. Every citizen.
         </p>
 
-        {/* Step cards */}
+        {/* Step cards — no backdrop-filter to avoid Android GPU stalls */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-left">
           {STEPS.map(({ icon: Icon, bg, iconColor, number, title, description }) => (
             <div
               key={number}
-              className="rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-colors"
-              style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}
+              className="rounded-2xl p-5 border border-white/10"
+              style={{ background: 'rgba(255,255,255,0.07)' }}
             >
               <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center mb-4`}>
                 <Icon className={`w-5 h-5 ${iconColor}`} />
@@ -119,21 +137,23 @@ export default function OnboardingOverlay() {
           ))}
         </div>
 
-        {/* CTA */}
+        {/* Primary CTA */}
         <button
           onClick={dismiss}
-          className="bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white font-bold px-12 py-3.5 rounded-full text-base shadow-lg shadow-emerald-500/30 transition-all duration-150 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5"
+          className="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 active:scale-95 text-white font-bold px-12 py-4 rounded-full text-base shadow-lg transition-all duration-150 touch-manipulation"
         >
           Get Started
         </button>
 
+        {/* Skip — <a> href is the hard fallback if JS fails entirely */}
         <div className="mt-5">
-          <button
-            onClick={dismiss}
-            className="text-white/35 hover:text-white/60 text-sm transition-colors"
+          <a
+            href="/?skip=1"
+            onClick={(e) => { e.preventDefault(); dismiss(); }}
+            className="text-white/40 hover:text-white/70 text-sm transition-colors touch-manipulation"
           >
             Skip for now →
-          </button>
+          </a>
         </div>
       </div>
     </div>
