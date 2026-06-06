@@ -27,8 +27,9 @@ export async function createServerSupabaseClient() {
 export function createServiceRoleClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  console.log('[createServiceRoleClient] url defined:', !!url, '| service key defined:', !!key, '| key prefix:', key?.slice(0, 20) ?? 'MISSING');
   if (!key) {
-    console.error('[createServiceRoleClient] SUPABASE_SERVICE_ROLE_KEY is not set');
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set — add it to your production environment variables');
   }
   return createClient(url, key, {
     auth: { persistSession: false },
