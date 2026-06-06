@@ -238,9 +238,7 @@ export default function ReportPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      let msg = `Report submitted! +${data.eco_points_earned} pts`;
-      if (data.badges_unlocked?.length > 0) msg += ` 🏆 New badge${data.badges_unlocked.length > 1 ? 's' : ''}!`;
-      toast.success(msg, { duration: 4000 });
+      toast.success('Report submitted! Thank you for contributing.', { duration: 4000 });
       router.push('/dashboard');
     } catch (err: any) {
       toast.error(err.message || 'Submission failed');

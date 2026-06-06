@@ -6,7 +6,7 @@ export async function POST() {
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     console.log('[POST /api/streak] auth user:', user?.id ?? null, 'authError:', authError?.message ?? null);
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) return NextResponse.json({ streak: 0, changed: false, badges_unlocked: [] });
 
     const service = createServiceRoleClient();
 

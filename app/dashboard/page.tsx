@@ -3,20 +3,14 @@
 import { useState, useEffect } from 'react';
 import ReportCard from '@/components/ReportCard';
 import TreeScoreCard from '@/components/TreeScoreCard';
-import type { Report, User } from '@/types';
-import { BADGES, CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
+import type { Report } from '@/types';
+import { CATEGORY_COLORS, THREAT_CATEGORIES } from '@/types';
 import {
-  BarChart3, Users, TreePine, Trophy, AlertTriangle,
+  BarChart3, Users, TreePine, AlertTriangle,
   CalendarDays, MapPin, Award, TrendingUp, TrendingDown, Minus,
   Download, Loader2,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/useTranslation';
-
-const RANK_STYLE = [
-  { color: 'text-yellow-500', bg: 'bg-yellow-50 border-yellow-200' },
-  { color: 'text-gray-400',   bg: 'bg-gray-50 border-gray-200' },
-  { color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200' },
-] as const;
 
 const THREAT_ICON: Record<string, string> = {
   habitat_destruction:     '🏚️',
@@ -77,7 +71,6 @@ function Trend({ now, prev, vsLabel, sameLabel }: { now: number; prev: number; v
 
 export default function DashboardPage() {
   const [reports, setReports]       = useState<Report[]>([]);
-  const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading]       = useState(true);
   const [stats, setStats]           = useState<Stats | null>(null);
@@ -94,13 +87,6 @@ export default function DashboardPage() {
 
       const { createClient } = await import('@/lib/supabase');
       const supabase = createClient();
-
-      const { data: lb } = await supabase
-        .from('users')
-        .select('id, username, eco_points, badge_ids, reports_count')
-        .order('eco_points', { ascending: false })
-        .limit(10);
-      setLeaderboard((lb as User[]) ?? []);
 
       const { count } = await supabase
         .from('users')
@@ -350,86 +336,26 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Sightings + Leaderboard ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('dashboard.recentSightings')}</h2>
-          {loading ? (
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-100 h-24 animate-pulse" />
-              ))}
-            </div>
-          ) : speciesReports.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
-              {t('dashboard.noSightings')} <a href="/report" className="text-emerald-600 hover:underline">{t('dashboard.beFirst')}</a>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {speciesReports.slice(0, 10).map((r) => (
-                <ReportCard key={r.id} report={r} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" /> {t('dashboard.topReporters')}
-          </h2>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            {loading ? (
-              <div className="p-4 space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />
-                ))}
-              </div>
-            ) : leaderboard.length === 0 ? (
-              <p className="p-6 text-center text-gray-400 text-sm">{t('dashboard.noMembers')}</p>
-            ) : (
-              <ul className="divide-y divide-gray-50">
-                {leaderboard.map((user, idx) => {
-                  const rank = RANK_STYLE[idx];
-                  const topBadgeId = user.badge_ids?.[user.badge_ids.length - 1];
-                  const topBadge = topBadgeId ? BADGES[topBadgeId] : null;
-                  return (
-                    <li key={user.id} className="flex items-center gap-3 px-4 py-3">
-                      {rank ? (
-                        <span className={`text-xs font-bold w-8 h-8 flex items-center justify-center rounded-full border ${rank.bg} ${rank.color} flex-shrink-0`}>
-                          {idx + 1}
-                        </span>
-                      ) : (
-                        <span className="text-xs font-bold w-8 text-center text-gray-400 flex-shrink-0">
-                          {idx + 1}
-                        </span>
-                      )}
-                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-xs font-bold text-emerald-700 flex-shrink-0">
-                        {user.username?.[0]?.toUpperCase() ?? '?'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-semibold text-gray-800 truncate">
-                            {user.username ?? 'Unknown'}
-                          </span>
-                          {topBadge && (
-                            <span title={topBadge.label} className="text-base leading-none flex-shrink-0">
-                              {topBadge.icon}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
-                          <span className="font-semibold text-emerald-600">{user.eco_points ?? 0} pts</span>
-                          <span>·</span>
-                          <span>{user.reports_count ?? 0} report{(user.reports_count ?? 0) !== 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+      {/* ── Recent Sightings ── */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('dashboard.recentSightings')}</h2>
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 h-24 animate-pulse" />
+            ))}
           </div>
-        </div>
+        ) : speciesReports.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
+            {t('dashboard.noSightings')} <a href="/report" className="text-emerald-600 hover:underline">{t('dashboard.beFirst')}</a>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {speciesReports.slice(0, 10).map((r) => (
+              <ReportCard key={r.id} report={r} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Threat reports ── */}

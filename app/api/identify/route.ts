@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -14,30 +12,6 @@ function stripJsonFences(text: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Accept both cookie-based auth (web) and Bearer token auth (mobile)
-    let user: { id: string } | null = null;
-    const authHeader = req.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.slice(7);
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { auth: { persistSession: false } },
-      );
-      const { data } = await supabase.auth.getUser(token);
-      user = data.user;
-      console.log('[/api/identify] bearer auth — user:', user?.id ?? 'null');
-    } else {
-      const supabase = await createServerSupabaseClient();
-      const { data } = await supabase.auth.getUser();
-      user = data.user;
-      console.log('[/api/identify] cookie auth — user:', user?.id ?? 'null');
-    }
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { image_base64, description, region = 'UK' } = await req.json();
 
     console.log('[/api/identify] model=claude-sonnet-4-20250514 key_prefix=%s image=%s',
