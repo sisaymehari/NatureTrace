@@ -12,6 +12,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const redirect = params.get('redirect') ?? '/dashboard';
+  const fromReport = redirect.startsWith('/report');
   const supabase = createClient();
 
   const [email, setEmail] = useState('');
@@ -42,6 +43,11 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleLogin} className="space-y-4">
+      {fromReport && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+          Please sign in to submit a report.
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
         <input
@@ -83,6 +89,15 @@ function LoginForm() {
       >
         {magicMode ? 'Use password instead' : 'Sign in with magic link'}
       </button>
+
+      <div className="text-center pt-1">
+        <Link
+          href="/"
+          className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          Continue as Guest →
+        </Link>
+      </div>
     </form>
   );
 }
