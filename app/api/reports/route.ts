@@ -4,7 +4,7 @@ import { createServiceRoleClient } from '@/lib/supabase-server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { category, species_name, description, photo_url, latitude, longitude, location_name, ai_confidence, is_invasive, severity } = body;
+    const { category, species_name, description, photo_url, photo_base64, latitude, longitude, location_name, ai_confidence, is_invasive, severity } = body;
 
     const service = createServiceRoleClient();
 
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       species_name,
       description,
       photo_url: photo_url ?? null,
+      photo_base64: photo_base64 ?? null,
       location,
       location_name: location_name ?? null,
       ai_confidence: ai_confidence ?? null,

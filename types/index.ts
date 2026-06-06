@@ -22,6 +22,7 @@ export interface Report {
   species_name: string;
   description: string;
   photo_url: string | null;
+  photo_base64: string | null;
   latitude: number;
   longitude: number;
   location_name: string | null;

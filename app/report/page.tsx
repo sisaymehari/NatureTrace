@@ -49,7 +49,6 @@ export default function ReportPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   const [aiResult, setAiResult] = useState<AIIdentifyResult | null>(null);
   const [identifying, setIdentifying] = useState(false);
@@ -184,18 +183,6 @@ export default function ReportPage() {
     );
   };
 
-  const uploadPhoto = async (): Promise<string | null> => {
-    if (!photoBase64) return null;
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_base64: photoBase64 }),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error ?? 'Photo upload failed');
-    return json.url;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!speciesName.trim()) {
@@ -216,8 +203,18 @@ export default function ReportPage() {
 
     setSubmitting(true);
     try {
-      let url = photoUrl;
-      if (!url && photoBase64) { url = await uploadPhoto(); setPhotoUrl(url); }
+      let photo_base64: string | null = null;
+      if (photoBase64) {
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_base64: photoBase64, mime_type: 'image/jpeg' }),
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadData.error ?? 'Photo upload failed');
+        // Strip data URI prefix — store raw base64 in the DB
+        photo_base64 = (uploadData.base64 as string)?.replace(/^data:image\/\w+;base64,/, '') ?? null;
+      }
 
       const severity = category === 'environmental_emergency' ? 'high'
         : isThreat ? 'medium'
@@ -227,7 +224,8 @@ export default function ReportPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          category, species_name: speciesName, description, photo_url: url,
+          category, species_name: speciesName, description,
+          photo_base64,
           latitude, longitude, location_name: locationName,
           ai_confidence: aiResult?.confidence ?? null,
           is_invasive: isThreat ? false : (aiResult?.is_invasive ?? false),

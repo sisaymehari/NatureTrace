@@ -16,6 +16,7 @@ interface ReportDetail {
   species_name: string;
   description: string | null;
   photo_url: string | null;
+  photo_base64: string | null;
   latitude: number | null;
   longitude: number | null;
   location_name: string | null;
@@ -180,9 +181,9 @@ export default function ReportDetailPage() {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Hero photo */}
-        {report.photo_url && (
+        {(report.photo_url || report.photo_base64) && (
           <img
-            src={report.photo_url}
+            src={report.photo_url ?? `data:image/jpeg;base64,${report.photo_base64}`}
             alt={report.species_name}
             className="w-full h-72 object-cover"
           />
