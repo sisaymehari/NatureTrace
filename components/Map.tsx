@@ -218,8 +218,13 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
     const ago = timeAgo(report.created_at);
     return `
       <div style="font-family:system-ui,Arial,sans-serif;width:260px;overflow:hidden;margin:-1px">
-        ${report.photo_url || report.photo_base64
-          ? `<img src="${report.photo_url ?? `data:image/jpeg;base64,${report.photo_base64}`}" alt="${report.species_name}" style="width:100%;height:130px;object-fit:cover;display:block" />`
+        ${report.photo_url
+          ? `<img src="${report.photo_url}" alt="${report.species_name}" style="width:100%;height:130px;object-fit:cover;display:block" />`
+          : report.photo_base64
+          ? `<div style="width:100%;height:130px;background:#d1fae5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+               <span style="font-size:28px">📷</span>
+               <span style="font-size:11px;color:#065f46;font-weight:600">Photo attached — view details</span>
+             </div>`
           : ''}
         <div style="padding:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
