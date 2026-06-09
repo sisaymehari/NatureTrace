@@ -27,9 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#1D6A48" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-        <link rel="dns-prefetch" href="https://mkkloluggtpwmfhlrocm.supabase.co" />
+        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
         <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
-        <link rel="preconnect" href="https://mkkloluggtpwmfhlrocm.supabase.co" crossOrigin="anonymous" />
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col bg-gray-50" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <NavigationProgress />
