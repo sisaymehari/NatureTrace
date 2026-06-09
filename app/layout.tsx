@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import NavigationProgress from "@/components/NavigationProgress";
+import PageWrapper from "@/components/PageWrapper";
 
 export const metadata: Metadata = {
   title: "NatureTrace — Biodiversity Reporting",
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col bg-gray-50" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <NavigationProgress />
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 flex flex-col">
+          <PageWrapper>{children}</PageWrapper>
+        </main>
         <Toaster position="bottom-right" />
         <OnboardingOverlay />
         <ServiceWorkerRegistration />

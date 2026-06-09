@@ -54,6 +54,7 @@ export default function ReportPage() {
   const [identifying, setIdentifying] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [submitted, setSubmitted] = useState<{ speciesName: string; reportId: string } | null>(null);
 
   // Location autocomplete
   const [locResults, setLocResults] = useState<NominatimResult[]>([]);
@@ -236,8 +237,7 @@ export default function ReportPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      toast.success('Report submitted! Thank you for contributing.', { duration: 4000 });
-      router.push('/dashboard');
+      setSubmitted({ speciesName, reportId: data.report_id });
     } catch (err: any) {
       toast.error(err.message || 'Submission failed');
     } finally {
@@ -247,6 +247,46 @@ export default function ReportPage() {
 
   const catInfo = ALL_CATS.find((c) => c.value === category);
   const colors = CATEGORY_COLORS[category];
+
+  if (submitted) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <div className="success-pop text-center max-w-sm w-full">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <CheckCircle className="w-10 h-10 text-emerald-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Report submitted!</h1>
+          <p className="text-gray-500 mb-1 text-sm">Thank you for helping protect UK biodiversity.</p>
+          <p className="text-emerald-700 font-semibold text-lg mb-8">{submitted.speciesName}</p>
+          <div className="flex flex-col gap-3">
+            <a
+              href="/"
+              className="btn-press w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition-colors text-sm inline-block"
+            >
+              View on Map
+            </a>
+            <button
+              onClick={() => {
+                setSubmitted(null);
+                setSpeciesName('');
+                setDescription('');
+                setPhotoPreview(null);
+                setPhotoBase64(null);
+                setAiResult(null);
+                setLocationName('');
+                setLatitude(null);
+                setLongitude(null);
+                setCategory('wildlife');
+              }}
+              className="btn-press w-full border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium py-3 rounded-xl transition-colors text-sm"
+            >
+              Submit another report
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -286,18 +326,20 @@ export default function ReportPage() {
                 <button
                   type="button"
                   onClick={() => cameraRef.current?.click()}
-                  className="flex-1 flex flex-col items-center justify-center gap-2 py-6 bg-emerald-50 border-2 border-emerald-200 rounded-xl text-emerald-700 active:bg-emerald-100"
+                  className="btn-press flex-1 flex flex-col items-center justify-center gap-3 py-8 bg-emerald-50 border-2 border-emerald-200 rounded-2xl text-emerald-700 active:bg-emerald-100 shadow-sm"
                 >
-                  <span className="text-3xl">📷</span>
-                  <span className="text-sm font-semibold">Take Photo</span>
+                  <span className="text-4xl">📷</span>
+                  <span className="text-sm font-bold">Take Photo</span>
+                  <span className="text-xs text-emerald-500">Use camera</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="flex-1 flex flex-col items-center justify-center gap-2 py-6 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-700 active:bg-gray-100"
+                  className="btn-press flex-1 flex flex-col items-center justify-center gap-3 py-8 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-700 active:bg-gray-100 shadow-sm"
                 >
-                  <span className="text-3xl">🖼️</span>
-                  <span className="text-sm font-semibold">Choose from Library</span>
+                  <span className="text-4xl">🖼️</span>
+                  <span className="text-sm font-bold">From Library</span>
+                  <span className="text-xs text-gray-400">Choose file</span>
                 </button>
               </div>
               {/* Desktop — drag-and-drop zone */}
@@ -330,7 +372,7 @@ export default function ReportPage() {
 
         {/* AI Result Card */}
         {aiResult && !isThreat && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <div className="slide-in-down bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-emerald-600" />
               <span className="font-semibold text-emerald-800 text-sm">{t('report.aiIdentification')}</span>
@@ -362,7 +404,7 @@ export default function ReportPage() {
               return (
                 <button
                   key={value} type="button" onClick={() => setCategory(value)}
-                  className={`py-2.5 px-2 rounded-lg text-sm font-medium border transition-all flex flex-col items-center gap-0.5 ${
+                  className={`cat-card py-2.5 px-2 rounded-lg text-sm font-medium border transition-all flex flex-col items-center gap-0.5 ${
                     active ? `${c.bg} ${c.text} ${c.border}` : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
                   }`}
                 >
@@ -382,7 +424,7 @@ export default function ReportPage() {
               return (
                 <button
                   key={value} type="button" onClick={() => setCategory(value)}
-                  className={`py-2.5 px-2 rounded-lg text-sm font-medium border transition-all flex flex-col items-center gap-0.5 ${
+                  className={`cat-card py-2.5 px-2 rounded-lg text-sm font-medium border transition-all flex flex-col items-center gap-0.5 ${
                     active ? `${c.bg} ${c.text} ${c.border}` : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
                   }`}
                 >
@@ -502,7 +544,7 @@ export default function ReportPage() {
 
         <button
           type="submit" disabled={submitting || identifying}
-          className={`w-full font-semibold py-3 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-white ${
+          className={`btn-press w-full font-semibold py-3 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-white ${
             isThreat ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-700 hover:bg-emerald-800'
           }`}
         >

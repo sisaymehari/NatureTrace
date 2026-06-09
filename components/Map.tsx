@@ -182,6 +182,8 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
 
     if (mapMode === 'trees') {
       if (markersRef.current) map.removeLayer(markersRef.current);
+      // Smoothly fly to Hyde Park centre
+      map.flyTo([51.5073, -0.1659], 15, { animate: true, duration: 1.4 });
       loadHydeParkTrees(L, map);
     } else {
       if (treeLayerRef.current) { map.removeLayer(treeLayerRef.current); treeLayerRef.current = null; }
@@ -392,7 +394,7 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
          *   mobile  — below search (top-[58px], search is top-3 + ~42px tall)
          *   desktop — top-right beside search (md:top-3)
          */}
-        <div className="absolute top-[58px] right-3 pointer-events-auto md:top-3">
+        <div className="overlay-fade absolute top-[58px] right-3 pointer-events-auto md:top-3">
           <div className="flex bg-white/95 backdrop-blur-sm rounded-full p-1 shadow-md border border-gray-200">
             <button
               onClick={() => setMapMode('threats')}

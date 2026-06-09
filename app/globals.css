@@ -52,3 +52,59 @@ html, body {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* ── Page entry ─────────────────────────────────────────────────────────────── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageIn 0.28s ease-out forwards; }
+
+/* ── Filter bar slide down ──────────────────────────────────────────────────── */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-down { animation: slideDown 0.3s ease-out forwards; }
+
+/* ── Map fade-in ────────────────────────────────────────────────────────────── */
+@keyframes mapFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.map-fade-in { animation: mapFadeIn 0.6s ease-out forwards; }
+
+/* ── Submit button gentle pulse ─────────────────────────────────────────────── */
+@keyframes reportPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(16,185,129,0.45), 0 0 0 0 rgba(16,185,129,0.35); }
+  50%       { box-shadow: 0 8px 30px rgba(16,185,129,0.65), 0 0 0 10px rgba(16,185,129,0); }
+}
+.report-btn-pulse { animation: reportPulse 2.4s ease-in-out infinite; }
+
+/* ── AI result slide in ─────────────────────────────────────────────────────── */
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+.slide-in-down { animation: slideInDown 0.25s ease-out forwards; }
+
+/* ── Success screen ─────────────────────────────────────────────────────────── */
+@keyframes successPop {
+  0%   { opacity: 0; transform: scale(0.85); }
+  60%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.success-pop { animation: successPop 0.4s ease-out forwards; }
+
+/* ── Category / button press ────────────────────────────────────────────────── */
+.cat-card   { transition: transform 0.1s ease, box-shadow 0.15s ease; }
+.cat-card:active { transform: scale(0.94); }
+.btn-press  { transition: transform 0.1s ease; }
+.btn-press:active { transform: scale(0.95); }
+
+/* ── Map mode overlay fade ──────────────────────────────────────────────────── */
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.overlay-fade { animation: overlayFade 0.35s ease-out forwards; }
