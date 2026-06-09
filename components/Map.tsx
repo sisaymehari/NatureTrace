@@ -50,6 +50,11 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
   const markersRef     = useRef<any>(null);
   const LRef           = useRef<any>(null);
   const [reports, setReports] = useState<Report[]>(initialReports);
+
+  // Sync from parent once data arrives (map mounts before fetch completes)
+  useEffect(() => {
+    if (initialReports.length > 0) setReports(initialReports);
+  }, [initialReports.length]);
   const [locating, setLocating] = useState(false);
 
   // Map mode

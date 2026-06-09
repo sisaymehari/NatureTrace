@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase-server';
 
+export const revalidate = 30;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

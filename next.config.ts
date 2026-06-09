@@ -8,17 +8,8 @@ const nextConfig: NextConfig = {
         hostname: "mkkloluggtpwmfhlrocm.supabase.co",
       },
     ],
-  },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          { key: "Cache-Control", value: "no-store, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-        ],
-      },
-    ];
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60,
   },
 };
 

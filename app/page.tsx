@@ -19,7 +19,6 @@ const MapComponent = dynamic(() => import('@/components/Map'), {
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState<Category | 'all'>('all');
   const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, species: 0 });
 
   useEffect(() => {
@@ -31,8 +30,7 @@ export default function HomePage() {
         const unique = new Set(arr.map((r) => r.species_name));
         setStats({ total: arr.length, species: unique.size });
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
   }, []);
 
   return (
@@ -62,15 +60,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map — renders immediately; markers populate once data arrives */}
       <div className="flex-1 relative">
-        {loading ? (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-            <div className="text-gray-400 text-sm animate-pulse">Loading reports…</div>
-          </div>
-        ) : (
-          <MapComponent initialReports={reports} activeCategory={activeCategory} />
-        )}
+        <MapComponent initialReports={reports} activeCategory={activeCategory} />
         <InvasiveAlerts />
       </div>
 

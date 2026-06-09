@@ -81,18 +81,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const reportsRes = await fetch('/api/reports?limit=40');
-      const reportsData: Report[] = await reportsRes.json().catch(() => []);
-      setReports(Array.isArray(reportsData) ? reportsData : []);
-
       const { createClient } = await import('@/lib/supabase');
       const supabase = createClient();
 
-      const { count } = await supabase
-        .from('users')
-        .select('id', { count: 'exact', head: true });
-      setMemberCount(count ?? 0);
+      const [reportsRes, { count }] = await Promise.all([
+        fetch('/api/reports?limit=40'),
+        supabase.from('users').select('id', { count: 'exact', head: true }),
+      ]);
 
+      const reportsData: Report[] = await reportsRes.json().catch(() => []);
+      setReports(Array.isArray(reportsData) ? reportsData : []);
+      setMemberCount(count ?? 0);
       setLoading(false);
     };
 
