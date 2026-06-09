@@ -146,8 +146,28 @@ export default function ReportDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader className="w-6 h-6 animate-spin text-emerald-600" />
+      <div className="max-w-2xl mx-auto px-4 py-6 page-enter">
+        <div className="h-5 w-14 bg-gray-200 rounded-lg animate-pulse mb-4" />
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="w-full h-64 bg-emerald-50 animate-pulse" />
+          <div className="p-6 space-y-4">
+            <div className="flex gap-2">
+              <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+            </div>
+            <div className="h-7 w-2/3 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-100 rounded animate-pulse" />
+              <div className="h-4 w-5/6 bg-gray-100 rounded animate-pulse" />
+              <div className="h-4 w-4/6 bg-gray-100 rounded animate-pulse" />
+            </div>
+            <div className="h-px bg-gray-100" />
+            <div className="space-y-2">
+              <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-44 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -169,11 +189,11 @@ export default function ReportDetailPage() {
   const date = new Date(report.created_at);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 page-enter">
       {/* Back button */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors"
+        className="btn-press flex items-center gap-1.5 text-sm text-gray-500 hover:text-emerald-700 mb-4 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
@@ -185,7 +205,8 @@ export default function ReportDetailPage() {
           <img
             src={report.photo_url ?? `data:image/jpeg;base64,${report.photo_base64}`}
             alt={report.species_name}
-            className="w-full h-72 object-cover"
+            loading="lazy"
+            className="w-full h-72 object-cover bg-emerald-50"
           />
         )}
 

@@ -51,10 +51,32 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
   const LRef           = useRef<any>(null);
   const [reports, setReports] = useState<Report[]>(initialReports);
 
-  // Sync from parent once data arrives (map mounts before fetch completes)
+  // Inject optimistic pending pin from localStorage immediately on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('naturetrace_pending_pin');
+      if (!stored) return;
+      const pin = JSON.parse(stored);
+      setReports((prev) => prev.some((r) => r.id === pin.id) ? prev : [pin, ...prev]);
+    } catch {}
+  }, []);
+
+  // Sync from parent once data arrives; clear pending pin if confirmed in fetch
   useEffect(() => {
     console.log('[Map] initialReports updated:', initialReports.length);
-    if (initialReports.length > 0) setReports(initialReports);
+    if (initialReports.length > 0) {
+      setReports(initialReports);
+      // If the pending pin is now in the server response, remove it from localStorage
+      try {
+        const stored = localStorage.getItem('naturetrace_pending_pin');
+        if (stored) {
+          const pin = JSON.parse(stored);
+          if (initialReports.some((r) => r.id === pin.id)) {
+            localStorage.removeItem('naturetrace_pending_pin');
+          }
+        }
+      } catch {}
+    }
   }, [initialReports.length]);
   const [locating, setLocating] = useState(false);
 

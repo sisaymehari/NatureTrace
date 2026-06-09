@@ -20,12 +20,17 @@ export default function ReportCard({ report }: Props) {
   return (
     <Link href={`/report/${report.id}`} className="block">
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex gap-0">
-      {report.photo_url && (
+      {(report.photo_url || report.photo_base64) ? (
         <img
-          src={report.photo_url}
+          src={report.photo_url ?? `data:image/jpeg;base64,${report.photo_base64}`}
           alt={report.species_name}
-          className="w-24 h-24 flex-shrink-0 object-cover"
+          loading="lazy"
+          className="w-24 h-24 flex-shrink-0 object-cover bg-emerald-50"
         />
+      ) : (
+        <div className="w-24 h-24 flex-shrink-0 bg-emerald-50 flex items-center justify-center text-2xl">
+          🌿
+        </div>
       )}
       <div className="p-3 flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">

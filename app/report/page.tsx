@@ -237,6 +237,27 @@ export default function ReportPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Optimistic pin — map will show it immediately on next visit
+      try {
+        localStorage.setItem('naturetrace_pending_pin', JSON.stringify({
+          id: data.report_id,
+          category,
+          species_name: speciesName,
+          description,
+          photo_url: null,
+          photo_base64: photo_base64,
+          latitude,
+          longitude,
+          location_name: locationName,
+          ai_confidence: aiResult?.confidence ?? null,
+          is_invasive: aiResult?.is_invasive ?? false,
+          is_verified: false,
+          severity,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        }));
+      } catch {}
+
       setSubmitted({ speciesName, reportId: data.report_id });
     } catch (err: any) {
       toast.error(err.message || 'Submission failed');
