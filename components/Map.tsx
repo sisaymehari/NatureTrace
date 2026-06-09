@@ -53,6 +53,7 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
 
   // Sync from parent once data arrives (map mounts before fetch completes)
   useEffect(() => {
+    console.log('[Map] initialReports updated:', initialReports.length);
     if (initialReports.length > 0) setReports(initialReports);
   }, [initialReports.length]);
   const [locating, setLocating] = useState(false);
@@ -201,6 +202,9 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
       (r) => activeCategory === 'all' || r.category === activeCategory
     );
 
+    const withCoords = filtered.filter(r => r.latitude != null && r.longitude != null).length;
+    console.log('[Map] renderMarkers — total:', reports.length, 'filtered:', filtered.length, 'with coords:', withCoords);
+
     filtered.forEach((report) => {
       if (!report.latitude || !report.longitude) return;
       const color = CATEGORY_COLORS[report.category]?.pin ?? '#1D6A48';
@@ -254,12 +258,13 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
     import('leaflet').then(({ default: L }) => renderMarkers(L, mapInstanceRef.current));
   }, [activeCategory, reports]);
 
-  // ── Supabase Realtime ───────────────────────────────────────────────────────
+  // ── Supabase Realtime + polling fallback ────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel('reports-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reports' }, (payload) => {
+        console.log('[Map] realtime INSERT received');
         const r = payload.new as any;
         let lat: number | null = null, lng: number | null = null;
         const loc = r.location;
@@ -278,8 +283,25 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
         }
         setReports((prev) => [...prev, { ...r, latitude: lat, longitude: lng }]);
       })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        console.log('[Map] realtime subscription status:', status);
+      });
+
+    // Polling fallback — refresh every 30s in case realtime is blocked by RLS
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch('/api/reports?limit=200');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setReports(data);
+        }
+      } catch {}
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
   }, []);
 
   // ── Search ──────────────────────────────────────────────────────────────────

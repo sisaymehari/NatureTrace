@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase-server';
 
-export const revalidate = 30;
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -69,7 +67,7 @@ export async function GET(req: NextRequest) {
 
     let query = service
       .from('reports')
-      .select('*, users(username, avatar_url)')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -84,6 +82,8 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await query;
     if (error) throw error;
+
+    console.log('[GET /api/reports] raw rows:', data?.length ?? 0);
 
     // PostgREST returns geography(Point) as EWKB hex
     const reports = (data ?? []).map((r: any) => {
@@ -109,6 +109,8 @@ export async function GET(req: NextRequest) {
       return { ...r, latitude, longitude };
     });
 
+    const withCoords = reports.filter(r => r.latitude != null && r.longitude != null).length;
+    console.log('[GET /api/reports] with coords:', withCoords, '/', reports.length);
     return NextResponse.json(reports);
   } catch (err: any) {
     console.error('[GET /api/reports]', err);

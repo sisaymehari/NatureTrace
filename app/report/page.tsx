@@ -259,12 +259,12 @@ export default function ReportPage() {
           <p className="text-gray-500 mb-1 text-sm">Thank you for helping protect UK biodiversity.</p>
           <p className="text-emerald-700 font-semibold text-lg mb-8">{submitted.speciesName}</p>
           <div className="flex flex-col gap-3">
-            <a
-              href="/"
-              className="btn-press w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition-colors text-sm inline-block"
+            <button
+              onClick={() => router.push('/')}
+              className="btn-press w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
             >
               View on Map
-            </a>
+            </button>
             <button
               onClick={() => {
                 setSubmitted(null);
