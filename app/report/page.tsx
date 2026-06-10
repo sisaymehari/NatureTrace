@@ -315,7 +315,7 @@ export default function ReportPage() {
       <p className="text-gray-500 text-sm mb-4">{t('report.subtitle')}</p>
 
       {/* pb-24 on mobile creates space so the sticky button doesn't overlap last field */}
-      <form id="report-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6 pb-24 md:pb-0">
+      <form id="report-form" onSubmit={handleSubmit} className="form-safe-pad space-y-4 md:space-y-6 md:pb-0">
         {/* Photo Upload */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -566,8 +566,10 @@ export default function ReportPage() {
 
       </form>
 
-      {/* Submit button — fixed at bottom on mobile, inline on desktop */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:static md:px-0 md:py-0 md:bg-transparent md:border-0 md:shadow-none md:mt-6">
+      {/* Submit button — fixed at bottom on mobile (with safe-area inset), inline on desktop */}
+      <div
+        className="bar-safe-pad fixed bottom-0 left-0 right-0 z-50 px-4 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:static md:px-0 md:py-0 md:bg-transparent md:border-0 md:shadow-none md:mt-6"
+      >
         <div className="max-w-2xl mx-auto">
           <button
             type="submit"
