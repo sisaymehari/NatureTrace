@@ -238,7 +238,7 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
         popupAnchor: [0, -10],
       });
       const marker = L.marker([report.latitude, report.longitude], { icon });
-      marker.bindPopup(L.popup({ maxWidth: 280 }).setContent(createPopupHTML(report)));
+      marker.bindPopup(L.popup({ maxWidth: 220 }).setContent(createPopupHTML(report)));
       cluster.addLayer(marker);
     });
 
@@ -249,16 +249,17 @@ export default function MapComponent({ initialReports = [], activeCategory = 'al
   const createPopupHTML = (report: Report) => {
     const badge = POPUP_BADGE[report.category] ?? { bg: '#F3F4F6', color: '#374151', border: '#D1D5DB' };
     const ago = timeAgo(report.created_at);
+    // Truncate base64 to avoid huge HTML strings in the popup
+    const b64Preview = report.photo_base64 ? report.photo_base64.slice(0, 50000) : null;
+    const imgStyle = 'width:100%;height:120px;object-fit:cover;border-radius:8px 8px 0 0;display:block;';
+    const photoHTML = report.photo_url
+      ? `<img src="${report.photo_url}" alt="${report.species_name}" style="${imgStyle}" loading="lazy" />`
+      : b64Preview
+      ? `<img src="data:image/jpeg;base64,${b64Preview}" alt="${report.species_name}" style="${imgStyle}" loading="lazy" />`
+      : `<div style="width:100%;height:80px;background:#E1F5EE;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:28px;">🌿</div>`;
     return `
-      <div style="font-family:system-ui,Arial,sans-serif;width:260px;overflow:hidden;margin:-1px">
-        ${report.photo_url
-          ? `<img src="${report.photo_url}" alt="${report.species_name}" style="width:100%;height:130px;object-fit:cover;display:block" />`
-          : report.photo_base64
-          ? `<div style="width:100%;height:130px;background:#d1fae5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
-               <span style="font-size:28px">📷</span>
-               <span style="font-size:11px;color:#065f46;font-weight:600">Photo attached — view details</span>
-             </div>`
-          : ''}
+      <div style="font-family:system-ui,Arial,sans-serif;width:220px;overflow:hidden;margin:-1px">
+        ${photoHTML}
         <div style="padding:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;background:${badge.bg};color:${badge.color};border:1px solid ${badge.border}">

@@ -349,7 +349,7 @@ export default function DashboardPage() {
             {t('dashboard.noSightings')} <a href="/report" className="text-emerald-600 hover:underline">{t('dashboard.beFirst')}</a>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {speciesReports.slice(0, 10).map((r) => (
               <ReportCard key={r.id} report={r} />
             ))}

@@ -149,7 +149,7 @@ export default function ReportDetailPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 page-enter">
         <div className="h-5 w-14 bg-gray-200 rounded-lg animate-pulse mb-4" />
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="w-full h-64 bg-emerald-50 animate-pulse" />
+          <div className="w-full h-[250px] bg-emerald-50 animate-pulse" />
           <div className="p-6 space-y-4">
             <div className="flex gap-2">
               <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse" />
@@ -206,7 +206,7 @@ export default function ReportDetailPage() {
             src={report.photo_url ?? `data:image/jpeg;base64,${report.photo_base64}`}
             alt={report.species_name}
             loading="lazy"
-            className="w-full h-72 object-cover bg-emerald-50"
+            className="w-full h-[250px] object-cover bg-emerald-50"
           />
         )}
 
