@@ -310,11 +310,12 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('report.title')}</h1>
-      <p className="text-gray-500 text-sm mb-6">{t('report.subtitle')}</p>
+    <div className="max-w-2xl mx-auto px-4 pt-4 pb-4 md:py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('report.title')}</h1>
+      <p className="text-gray-500 text-sm mb-4">{t('report.subtitle')}</p>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* pb-24 on mobile creates space so the sticky button doesn't overlap last field */}
+      <form id="report-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6 pb-24 md:pb-0">
         {/* Photo Upload */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -347,7 +348,7 @@ export default function ReportPage() {
                 <button
                   type="button"
                   onClick={() => cameraRef.current?.click()}
-                  className="btn-press flex-1 flex flex-col items-center justify-center gap-3 py-8 bg-emerald-50 border-2 border-emerald-200 rounded-2xl text-emerald-700 active:bg-emerald-100 shadow-sm"
+                  className="btn-press flex-1 flex flex-col items-center justify-center gap-2 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl text-emerald-700 active:bg-emerald-100 shadow-sm"
                 >
                   <span className="text-4xl">📷</span>
                   <span className="text-sm font-bold">Take Photo</span>
@@ -356,7 +357,7 @@ export default function ReportPage() {
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="btn-press flex-1 flex flex-col items-center justify-center gap-3 py-8 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-700 active:bg-gray-100 shadow-sm"
+                  className="btn-press flex-1 flex flex-col items-center justify-center gap-2 py-5 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-700 active:bg-gray-100 shadow-sm"
                 >
                   <span className="text-4xl">🖼️</span>
                   <span className="text-sm font-bold">From Library</span>
@@ -563,15 +564,25 @@ export default function ReportPage() {
           </div>
         </div>
 
-        <button
-          type="submit" disabled={submitting || identifying}
-          className={`btn-press w-full font-semibold py-3 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-white ${
-            isThreat ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-700 hover:bg-emerald-800'
-          }`}
-        >
-          {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('report.submitting')}</> : isThreat ? t('report.submitThreatBtn') : t('report.submitBtn')}
-        </button>
       </form>
+
+      {/* Submit button — fixed at bottom on mobile, inline on desktop */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:static md:px-0 md:py-0 md:bg-transparent md:border-0 md:shadow-none md:mt-6">
+        <div className="max-w-2xl mx-auto">
+          <button
+            type="submit"
+            form="report-form"
+            disabled={submitting || identifying}
+            className={`btn-press w-full font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-white ${
+              isThreat ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-700 hover:bg-emerald-800'
+            }`}
+          >
+            {submitting
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('report.submitting')}</>
+              : isThreat ? t('report.submitThreatBtn') : t('report.submitBtn')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
