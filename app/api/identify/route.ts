@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   try {
     const { image_base64, description, region = 'UK' } = await req.json();
 
-    console.log('[/api/identify] model=claude-sonnet-4-20250514 key_prefix=%s image=%s',
+    console.log('[/api/identify] model=claude-sonnet-4-6 key_prefix=%s image=%s',
       process.env.ANTHROPIC_API_KEY?.slice(0, 14) ?? 'MISSING',
       image_base64 ? `${Math.round(image_base64.length / 1024)}KB` : 'none',
     );
@@ -43,7 +43,7 @@ Return JSON: { "species_name": string, "scientific_name": string, "category": "w
     ];
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system:
         'You are a biodiversity expert specialising in UK wildlife, plants, marine life, and invasive species. Always respond with ONLY valid JSON — no markdown, no explanation.',

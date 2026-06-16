@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const { messages, user_location } = await req.json();
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: `You are NatureTrace's biodiversity assistant specialising in UK ecosystems. Help citizen scientists identify species and report threats accurately. If confident in an ID, suggest they log it using the Report tab. Flag invasive species clearly. Keep responses concise and encouraging.${user_location ? ` User location: ${user_location}.` : ''}`,
       messages,
